@@ -2,3 +2,7 @@
 _build/
 impc.byte
 impc.native
+tests/*.aimp
+tests/*.asm
+tests/*.eimp
+tests/*.mimp
