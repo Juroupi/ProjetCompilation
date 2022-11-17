@@ -1,0 +1,33 @@
+function print_int(n) {
+
+    if (n < 0) {
+        putchar('-');
+        print_int(-n);
+    }
+
+    else {
+    
+        if (n / 10 > 0) {
+            print_int(n / 10);
+        }
+    
+        putchar('0' + n % 10);
+    }
+}
+
+function print_range(min, max) {
+
+    if (min <= max) {
+    
+        print_int(min);
+
+        if (min < max) {
+            putchar(',');
+            print_range(min + 1, max);
+        }
+    }
+}
+
+function main(arg) {
+    print_range(-5, 5);
+}

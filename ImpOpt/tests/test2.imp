@@ -1,0 +1,17 @@
+function test(c) {
+    
+    var i;
+
+    i = 1;
+
+    putchar(c + i);
+}
+
+function main(arg) {
+
+    var a;
+
+    a = 'A';
+
+    test(a);
+}
