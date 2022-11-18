@@ -66,18 +66,23 @@ instruction:
     BEGIN s1=list(instruction) END { If(c, s1, []) }
 | WHILE LPAR c=expression RPAR
     BEGIN s=list(instruction) END { While(c, s) }
-| RETURN e=expression SEMI { Return(e) }
+| RETURN e=expression_except_call SEMI { Return(e) }
 | RETURN SEMI { Return(Cst(0)) }
+| RETURN f=IDENT LPAR params=separated_list(COMMA, expression) RPAR SEMI { TailCall(f, params) }
 | e=expression SEMI { Expr(e) }
 ;
 
-expression:
+expression_except_call:
 | n=CST { Cst(n) }
 | b=BOOL { Bool(b) }
 | id=IDENT { Var(id) }
 | LPAR e=expression RPAR { e }
 | op=unop e=expression { Unop(op, e) }
 | e1=expression op=binop e2=expression { Binop(op, e1, e2) }
+;
+
+expression:
+| e=expression_except_call { e }
 | f=IDENT LPAR params=separated_list(COMMA, expression) RPAR { Call(f, params) }
 ;
 

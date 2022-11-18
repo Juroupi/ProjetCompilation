@@ -74,7 +74,7 @@ let tr_fdef fdef =
 			let nargs = List.length args in
 			let s = 
 				if nargs > 0 then 
-					(tr_args args) ++ (Call (f, nargs)) ++ (Pop nargs)
+					(tr_args args) ++ (Call (f, nargs))
 				else
 					Nop ++ (Call (f, 0))
 			in "$v0", s
@@ -109,6 +109,13 @@ let tr_fdef fdef =
 		| Mimp.Expr e ->
 			let r, s = tr_expr e in
 			s
+		| Mimp.TailCall(f, args) ->
+			let nargs = List.length args in
+			if nargs > 0 then 
+				(tr_args args) ++ (TailCall (f, nargs))
+			else
+				Nop ++ (TailCall (f, 0))
+
 	and tr_seq = function
 		| []	  -> Nop
 		| i :: s -> tr_instr i @@ tr_seq s

@@ -50,6 +50,8 @@ type instruction =
   (* Utiliser une expression à la place d'une instruction,
      par exemple un appel de fonction *)
   | Expr    of expression
+  (* Fin d'une fonction + appel d'une autre fonction *)
+  | TailCall  of string * expression list
 (* Séquence d'instructions *)
 and sequence = instruction list
 (**
@@ -318,7 +320,7 @@ let exec_prog prog arg =
          appel de fonction effectué pour ses effets (de mémoire ou
          d'affichage). *)
       | Expr e -> ignore (eval_expr e)
-
+      | TailCall(f, args) -> raise (EReturn(eval_expr (Call(f, args))))
     in
 
     (* Code principal de l'interprétation d'un appel de fonction.
@@ -390,6 +392,8 @@ let pp_program prog out_channel =
        print "return(%s);" (pp_expr e)
     | Expr e ->
        print "%s;" (pp_expr e)
+    | TailCall(f, args) ->
+       print "return %s(%s);" f (pp_args args)
   and pp_seq = function
     | [] -> ()
     | i::seq -> print_margin(); pp_instr i; print "\n"; pp_seq seq

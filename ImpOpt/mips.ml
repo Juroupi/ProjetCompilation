@@ -112,6 +112,7 @@ let bgtz x (z : label)  = ins "bgtz %s, %s" x z
 let blez x (z : label)  = ins "blez %s, %s" x z
 let bltz x (z : label)  = ins "bltz %s, %s" x z
 
+let j  (z : label) = ins "j %s" z
 let jal  (z : label) = ins "jal %s" z
 let jalr r = ins "jalr %s" r
 let jr   r = ins "jr %s" r
@@ -162,8 +163,48 @@ let saved_list n = List.init n (fun i -> s i)
 let push_saved n = push_list (saved_list n)
 let pop_saved n = pop_list (saved_list n)
 
-let init_fun n = store fp 0 @@ store ra 1 @@ move fp sp @@ reserve (n+2)
-let return n = pop (n+2) @@ restore fp 0 @@ restore ra 1 @@ jr ra
+let init_fun locals saved =
+  store fp 0 @@ store ra 1 @@ move fp sp @@ reserve (locals+2) @@ push_saved saved
+let end_fun params locals saved =
+  pop_saved saved @@ pop (locals+2) @@ restore fp 0 @@ restore ra 1 @@ pop params
+let return = jr ra
+
+let tailcall fname src_params src_locals src_saved dst_params =
+  let frame = src_params + 2 + src_locals + src_saved in
+  let rec move_params n =
+    if n = 0 then 
+      nop 
+    else
+      move_params (n-1)
+      @@ lw t0 (-frame*4) sp
+      @@ push t0
+  in
+  pop dst_params
+  @@ end_fun src_params src_locals src_saved
+  @@ move_params dst_params
+  @@ j fname
+
+(*let tailcall f src_params src_saved src_locals dst_params =
+
+  let rec move_tailcall_params n dist =
+    if n = 0 then 
+      nop 
+    else
+      move_tailcall_params (n-1) dist
+      @@ lw t0 (n*4) sp
+      @@ sw t0 (n*4+dist*4) sp
+  in
+
+  let taillcall_restore_saved n dist =
+    nop
+  in
+  
+  comment (Printf.sprintf "\tappel terminal de %s" f)
+  @@ lw ra (-4) fp @@ lw fp 0 fp
+  @@ taillcall_restore_saved 0 0
+  @@ move_tailcall_params dst_params (src_params + 1 + src_locals)
+  @@ pop (2 + src_locals + dst_params)
+  @@ j f *)
 
 type program = { text : [ `text ] asm;
                  data : [ `data ] asm; }

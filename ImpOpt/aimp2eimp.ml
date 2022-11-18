@@ -133,7 +133,7 @@ let tr_fdef fdef =
       @@ save vrd
 
     | Aimp.Call(f, n) ->
-      Instr(Call f)
+      Instr(Call(f, n))
 
     | Aimp.If(vr, s1, s2) ->
       load1 vr
@@ -144,6 +144,9 @@ let tr_fdef fdef =
 
     | Aimp.Return ->
       Instr(Return)
+
+    | Aimp.TailCall(f, n) ->
+      Instr(TailCall(f, n))
 
   and tr_seq = function
     | Aimp.Seq(s1, s2) -> Seq(tr_seq s1, tr_seq s2)

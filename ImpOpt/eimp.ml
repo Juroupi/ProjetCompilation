@@ -22,10 +22,11 @@ type instruction =
   | Cst     of reg * int
   | Unop    of reg * unop * reg
   | Binop   of reg * binop * reg * reg
-  | Call    of string
+  | Call    of string * int
   | If      of reg * sequence * sequence
   | While   of sequence * reg * sequence
   | Return
+  | TailCall of string * int
 and sequence =
   | Seq     of sequence * sequence
   | Instr   of instruction
@@ -84,8 +85,8 @@ let pp_program prog out_channel =
        print "%s <- !%s;" vrd vr
     | Binop(vrd, op, vr1, vr2) -> 
        print "%s <- %s %s %s;" vrd vr1 (pp_binop op) vr2
-    | Call f ->
-       print "call %s;" f
+    | Call(f, n) ->
+       print "call %s (%i);" f n
     | Push vr ->
        print "push %s;" vr
     | Pop n ->
@@ -106,6 +107,8 @@ let pp_program prog out_channel =
        print_margin(); print "}"
     | Return ->
        print "return;"
+    | TailCall(f, n) ->
+       print "tailcall %s (%i);" f n
   and pp_seq = function
     | Nop -> ()
     | Seq(s1, s2) -> pp_seq s1; pp_seq s2

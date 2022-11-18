@@ -1,0 +1,21 @@
+function impair(i) {
+    if (i == 0) {
+        return false;
+    }
+    return pair(i - 1);
+}
+
+function pair(i) {
+    if (i == 0) {
+        return true;
+    }
+    return impair(i - 1);
+}
+
+function main(arg) {
+    if (pair(arg)) {
+        putchar('P');
+    } else {
+        putchar('I');
+    }
+}

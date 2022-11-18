@@ -1,0 +1,14 @@
+function pair(n) {
+    if (n == 0) { return true; }
+    if (n == 1) { return false; }
+    return pair(n - 2);
+}
+
+function main(arg) {
+    if (pair(arg)) {
+        putchar('P');
+    }
+    else {
+        putchar('I');
+    }
+}

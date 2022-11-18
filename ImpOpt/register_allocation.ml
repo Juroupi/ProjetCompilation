@@ -167,6 +167,16 @@ let liveness fdef =
         *)
         VSet.union out 
           (VSet.of_list ["$v0"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"])
+    | TailCall(_, n) ->
+        let modified = VSet.of_list [
+          "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"; "$t8"; "$t9";
+          "$a0"; "$a1"; "$a2"; "$a3";
+          "$v0"
+        ] in
+        let read = VSet.of_list [
+          "$v0"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"
+        ] in
+        VSet.union read (VSet.diff out modified)
     | If(r, s1, s2) ->
        (* En sortie du test de la valeur de [r], les blocs [s1] et [s2]
           sont deux futurs possibles. Les variables vivantes dans ces deux
@@ -304,7 +314,7 @@ let interference_graph fdef =
     | Putchar _ ->
       (* Putchar écrit dans les registres $v0 et $a0 *)
       add_edges g (Hashtbl.find live_out n) ["$v0"; "$a0"]
-    | Call(_, _) -> 
+    | Call(_, _) | TailCall(_, _) -> 
       (* Ecriture dans les registres $v, $a et $t *)
       add_edges g (Hashtbl.find live_out n) [
         "$v0"; "$v1";

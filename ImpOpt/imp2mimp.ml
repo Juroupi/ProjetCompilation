@@ -75,6 +75,7 @@ let rec tr_instr = function
   | Imp.While(e, s) -> While(tr_expr e, tr_seq s)
   | Imp.Return e -> Return(tr_expr e)
   | Imp.Expr e -> Expr(tr_expr e)
+  | Imp.TailCall(f, args) -> TailCall(f, List.map tr_expr args)
 and tr_seq s =
   List.map tr_instr s
 

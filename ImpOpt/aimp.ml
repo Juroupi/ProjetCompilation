@@ -51,6 +51,7 @@ type instruction =
   (* Fin d'exécution d'une fonction. La valeur renvoyée doit être placée
      dans $v0 avant d'exécuter cette instruction. *)
   | Return
+  | TailCall of string * int
   (* Les structures de contrôles sont toujours présentes.
      Attention, le test est fait sur un registre virtuel. *)
   | If      of vreg * sequence * sequence
@@ -156,6 +157,8 @@ let pp_program prog out_channel =
          print_margin(); print "}"
       | Return ->
          print "return;"
+      | TailCall(f, n) ->
+         print "tailcall %s (%i);" f n
     and pp_seq = function
       | Nop -> ()
       | Seq(s1, s2) -> pp_seq s1; pp_seq s2

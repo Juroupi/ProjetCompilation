@@ -18,12 +18,13 @@ type expression =
   | Call  of string * expression list
 
 type instruction =
-  | Putchar of expression
-  | Set     of string * expression
-  | If      of expression * sequence * sequence
-  | While   of expression * sequence
-  | Return  of expression
-  | Expr    of expression
+  | Putchar  of expression
+  | Set      of string * expression
+  | If       of expression * sequence * sequence
+  | While    of expression * sequence
+  | Return   of expression
+  | Expr     of expression
+  | TailCall of string * expression list
 and sequence = instruction list
 
 type function_def = {
@@ -90,6 +91,8 @@ let pp_program prog out_channel =
        print "return(%s);" (pp_expr e)
     | Expr e ->
        print "%s;" (pp_expr e)
+    | TailCall(f, args) ->
+       print "return %s(%s);" f (pp_args args)
   and pp_seq = function
     | [] -> ()
     | i::seq -> print_margin(); pp_instr i; print "\n"; pp_seq seq

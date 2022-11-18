@@ -33,11 +33,6 @@ let new_labels =
 let new_label fname name =
   (new_labels fname [| name |]).(0)
 
-let find_function prog fname =
-  match List.find_opt (fun fdef -> fdef.name = fname) prog.functions with
-  | None -> failwith ("fonction " ^ fname ^ " non definie")
-  | Some fdef -> fdef
-
 (**
    Fonction de traduction d'une fonction.
  *)
@@ -45,6 +40,21 @@ let tr_fdef prog fdef =
 
   let new_labels = new_labels fdef.name in
   let new_label = new_label fdef.name in
+
+  (* Trouver la définition d'une autre fonction du programme *)
+  let find_function fname =
+    match List.find_opt (fun fdef -> fdef.name = fname) prog.functions with
+    | None -> failwith (Printf.sprintf "la fonction %s n'est pas definie" fname)
+    | Some fdef -> fdef
+  in
+  
+  (* Vérifier qu'un appel de fonction est correct *)
+  let assert_call fname params =
+    let expected_params = (find_function fname).params in
+    if expected_params <> params then
+      failwith (Printf.sprintf 
+        "la fonction %s attend exactement %d parametre(s)" fname expected_params);
+  in
 
   (* Proposition : utiliser un point de retour unique pour tous les return
      (ou même en absence de return !). Cette étiquette est prévue pour cela. *)
@@ -74,14 +84,17 @@ let tr_fdef prog fdef =
     | Unop(rd, Minus, r)    -> neg rd r
     | Unop(rd, Not, r)      -> not_ rd r
     | Binop(rd, op, r1, r2) -> (tr_binop op) rd r1 r2
-    | Call(f)               -> save_temps fdef.temps @@ jal f @@ restore_temps fdef.temps 
+    | Call(f, n)            ->
+      assert_call f n; save_temps fdef.temps @@ jal f @@ restore_temps fdef.temps 
     | If(r, s1, s2)         -> tr_if r s1 s2
     | While(s1, r, s2)      -> tr_while s1 r s2
     | Return                -> b return_label
+    | TailCall(f, n)        ->
+      assert_call f n; tailcall f fdef.params fdef.locals fdef.temps n
 
   and tr_if r s1 s2 =
     let labels = new_labels [| "if"; "else"; "end_if" |] in
-    comment (labels.(0) ^ ":")
+    comment ("\t" ^ labels.(0) ^ ":")
     @@ beqz r labels.(1)
       @@ tr_seq s1
       @@ b labels.(2)
@@ -112,14 +125,13 @@ let tr_fdef prog fdef =
      - rendre la main.
    *)
   comment "\tsauvegarde des registres et allocation d'espace dans la pile"
-  @@ init_fun fdef.locals
-  @@ push_saved fdef.temps
+  @@ init_fun fdef.locals fdef.temps
   @@ comment "\tcode de la fonction"
   @@ tr_seq fdef.code
   @@ label return_label
   @@ comment "\trestauration des registres sauvegardes et de la pile puis retour"
-  @@ pop_saved fdef.temps
-  @@ return fdef.locals
+  @@ end_fun fdef.params fdef.locals fdef.temps
+  @@ return
 
 
 (**
