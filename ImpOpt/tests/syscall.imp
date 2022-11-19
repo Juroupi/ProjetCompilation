@@ -1,0 +1,22 @@
+function sound(pitch, duration_ms, instrument, volume) {
+    syscall(33, pitch, duration_ms, instrument, volume);
+}
+
+function synth(pitch, duration_ms) {
+    sound(pitch, duration_ms, 80, 64);
+}
+
+function main() {
+    synth(69, 0);
+    synth(69, 500);
+    synth(69, 500);
+    synth(69, 500);
+    synth(71, 500);
+    synth(73, 1000);
+    synth(71, 1000);
+    synth(69, 500);
+    synth(73, 500);
+    synth(71, 500);
+    synth(71, 500);
+    synth(69, 1000);
+}

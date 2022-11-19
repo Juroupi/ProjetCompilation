@@ -1,14 +1,21 @@
-function pair(n) {
-    if (n == 0) { return true; }
-    if (n == 1) { return false; }
-    return pair(n - 2);
+function impair(i, empty) {
+    if (i == 0) {
+        return false;
+    }
+    return pair(i - 1);
+}
+
+function pair(i) {
+    if (i == 0) {
+        return true;
+    }
+    return impair(i - 1, 0);
 }
 
 function main(arg) {
     if (pair(arg)) {
         putchar('P');
-    }
-    else {
+    } else {
         putchar('I');
     }
 }

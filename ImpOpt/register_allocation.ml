@@ -133,7 +133,7 @@ let liveness fdef =
     | Push r ->
       (* Le registre [r] est lu. *)
       VSet.add r out
-    | Pop _ ->
+    | Pop _ | SysCall ->
       (* Rien n'est lu ou modifié. *)
        out
     | Call(_, n) ->
@@ -321,7 +321,7 @@ let interference_graph fdef =
         "$a0"; "$a1"; "$a2"; "$a3";
         "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"; "$t8"; "$t9";
       ]
-    | Write _ | Return | Push _ | Pop _ ->
+    | Write _ | Return | Push _ | Pop _ | SysCall ->
       g
   in
 
@@ -396,7 +396,9 @@ let num_default_colors = VMap.cardinal default_colors
 
 (* Trouver le registre réel correspondant à une couleur négative *)
 let find_areg_by_color c =
-  fst (VMap.find_first (fun r -> VMap.find r default_colors = c) default_colors)
+  match vmap_find_first_opt(fun r _ -> VMap.find r default_colors = c) default_colors with
+  | None -> failwith (Printf.sprintf "aucun registre associe a la couleur %d" c)
+  | Some x -> x
 
 (** Fonction de coloriage simple : une couleur par sommet *)
 let color_simple (g: graph) (k: int): color * int =
@@ -506,10 +508,10 @@ let color (g: graph) (k: int): color =
       et on revient à [simplify]. Sinon, on passe à [spill].
    *)
   and freeze g =
-    let choice = VMap.find_first_opt (fun x -> degree x g < k) g in
+    let choice = vmap_find_first_opt (fun x _ -> degree x g < k) g in
     match choice with
     | None -> spill g
-    | Some (x, _) -> simplify (remove_prefs x g)
+    | Some x -> simplify (remove_prefs x g)
     
   (** Sacrifice d'un sommet.
       On se résigne à ne (peut-être) pas pouvoir donner à l'un des sommets

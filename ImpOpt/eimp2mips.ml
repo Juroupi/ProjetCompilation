@@ -89,6 +89,7 @@ let tr_fdef prog fdef =
     | If(r, s1, s2)         -> tr_if r s1 s2
     | While(s1, r, s2)      -> tr_while s1 r s2
     | Return                -> b return_label
+    | SysCall               -> syscall
     | TailCall(f, n)        ->
       assert_call f n; tailcall f fdef.params fdef.locals fdef.temps n
 

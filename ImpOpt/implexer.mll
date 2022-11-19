@@ -15,6 +15,7 @@
         "var",      VAR;
         "function", FUNCTION;
         "return",   RETURN;
+        "syscall",  SYSCALL;
       ] ;
     fun s ->
       try  Hashtbl.find h s

@@ -78,6 +78,18 @@ let tr_fdef fdef =
 				else
 					Nop ++ (Call (f, 0))
 			in "$v0", s
+		| Mimp.SysCall(code, args) ->
+			let r, s = tr_expr code in
+			"$v0", s ++ (Move("$v0", r)) @@ (tr_syscall_args args) ++ SysCall
+	
+	and tr_syscall_args args =
+		let rec tr_syscall_args i args = match i, args with
+		| _, [] -> Nop
+		| 4, _ -> failwith "trop de parametres pour l'appel systeme"
+		| i, a :: args ->
+			let r, s = tr_expr a in
+			(tr_syscall_args (i+1) args) @@ s ++ (Move(Printf.sprintf "$a%i" i, r))
+		in tr_syscall_args 0 args
 
 	and tr_args = function
 		| [] -> Nop

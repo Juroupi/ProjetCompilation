@@ -25,6 +25,7 @@ type vreg = string
    paramètres de l'instruction. *)
 type instruction =
   | Putchar of vreg
+  | SysCall
   (* Lecture de la valeur d'une variable ou d'un paramètre *)
   | Read    of vreg * string
   (* Mutation d'une variable *)
@@ -137,6 +138,8 @@ let pp_program prog out_channel =
          print "%s <- %s %s %s;" vrd vr1 (pp_binop op) vr2
       | Call(f, n) ->
          print "call %s (%i);" f n
+      | SysCall ->
+         print "syscall;"
       | Push vr ->
          print "push %s;" vr
       | Pop n ->

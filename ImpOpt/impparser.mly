@@ -15,7 +15,7 @@
 %token <string> IDENT
 %token VAR FUNCTION COMMA
 %token LPAR RPAR BEGIN END (* LBRACKET RBRACKET *) SEMI
-%token PUTCHAR SET IF ELSE WHILE RETURN
+%token PUTCHAR SET IF ELSE WHILE RETURN SYSCALL
 %token EOF
 
 %left AND OR
@@ -79,6 +79,7 @@ expression_except_call:
 | LPAR e=expression RPAR { e }
 | op=unop e=expression { Unop(op, e) }
 | e1=expression op=binop e2=expression { Binop(op, e1, e2) }
+| SYSCALL LPAR params=separated_nonempty_list(COMMA, expression) RPAR { SysCall(List.hd params, List.tl params) }
 ;
 
 expression:

@@ -111,3 +111,11 @@ let find_first_edge_opt f g =
     None
   with
     | Edge_found e -> Some e
+
+exception VMap_found of string ;;
+
+let vmap_find_first_opt f g =
+  try
+    VMap.iter (fun x y -> if f x y then raise (VMap_found x)) g; None
+  with
+    | VMap_found e -> Some e

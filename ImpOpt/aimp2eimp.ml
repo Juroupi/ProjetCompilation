@@ -145,6 +145,9 @@ let tr_fdef fdef =
     | Aimp.Return ->
       Instr(Return)
 
+    | Aimp.SysCall ->
+      Instr(SysCall)
+
     | Aimp.TailCall(f, n) ->
       Instr(TailCall(f, n))
 

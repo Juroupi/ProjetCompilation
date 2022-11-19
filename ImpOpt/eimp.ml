@@ -26,6 +26,7 @@ type instruction =
   | If      of reg * sequence * sequence
   | While   of sequence * reg * sequence
   | Return
+  | SysCall
   | TailCall of string * int
 and sequence =
   | Seq     of sequence * sequence
@@ -107,6 +108,8 @@ let pp_program prog out_channel =
        print_margin(); print "}"
     | Return ->
        print "return;"
+    | SysCall ->
+       print "syscall;"
     | TailCall(f, n) ->
        print "tailcall %s (%i);" f n
   and pp_seq = function

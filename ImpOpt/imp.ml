@@ -24,6 +24,7 @@ type expression =
   (* Appel de fonction, avec un identifiant de fonction et une 
      liste de paramètres *)
   | Call  of string * expression list
+  | SysCall of expression * expression list
 (**
    Exemple d'expression :
      (1 + x) * f(3, true)
@@ -270,6 +271,7 @@ let exec_prog prog arg =
          nouvel appel à [exec_call]. *)
       | Call(f, args) ->
          exec_call f (List.map eval_expr args)
+      | _ -> failwith "not implemented"
     in
 
     (**
@@ -363,6 +365,8 @@ let rec pp_expr = function
      sprintf "(%s%s%s)" (pp_expr e1) (pp_binop op) (pp_expr e2)
   | Call(f, args) ->
      sprintf "%s(%s)" f (pp_args args)
+  | SysCall(code, args) ->
+     sprintf "syscall(%s)" (pp_args args)
 and pp_args = function
   | [] -> ""
   | [a] -> pp_expr a
