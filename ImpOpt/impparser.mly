@@ -15,7 +15,7 @@
 %token <string> IDENT
 %token VAR FUNCTION COMMA
 %token LPAR RPAR BEGIN END (* LBRACKET RBRACKET *) SEMI
-%token PUTCHAR SET IF ELSE WHILE RETURN SYSCALL
+%token SET IF ELSE WHILE RETURN SYSCALL
 %token EOF
 
 %left AND OR
@@ -54,7 +54,6 @@ function_def:
 ;
 
 instruction:
-| PUTCHAR LPAR e=expression RPAR SEMI { Putchar(e) }
 | id=IDENT SET e=expression SEMI { Set(id, e) }
 | IF LPAR c=expression RPAR
     BEGIN s1=list(instruction) END

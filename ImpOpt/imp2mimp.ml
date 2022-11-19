@@ -70,7 +70,6 @@ let rec tr_expr = function
 
 (* Traduction directe *)
 let rec tr_instr = function
-  | Imp.Putchar e -> Putchar(tr_expr e)
   | Imp.Set(x, e) -> Set(x, tr_expr e)
   | Imp.If(e, s1, s2) -> If(tr_expr e, tr_seq s1, tr_seq s2)
   | Imp.While(e, s) -> While(tr_expr e, tr_seq s)

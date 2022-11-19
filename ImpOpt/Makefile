@@ -1,6 +1,6 @@
 TEST = test
 
-%.asm: %.imp impc.byte
+%.asm: %.imp std.imp impc.byte
 	./impc.byte $<
 
 mars: tests/$(TEST).asm

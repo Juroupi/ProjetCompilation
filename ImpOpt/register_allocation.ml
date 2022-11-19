@@ -121,9 +121,6 @@ let liveness fdef =
           aucun registre virtuel n'est lu, et un registre [rd] de destination
           est modifié. Le registre [rd] n'est donc pas vivant en entrée. *)
        VSet.remove rd out
-    | Putchar r ->
-       (* Le registre [r] est lu et les registres $a0 et $v0 sont modifiés. *)
-       VSet.add r (VSet.diff out (VSet.of_list ["$a0"; "$v0"]))
     | Move(rd, r) | Unop(rd, _, r) -> 
        (* Le registre [r] est lu, le registre [rd] est modifié. *)
        VSet.add r (VSet.remove rd out)
@@ -311,9 +308,6 @@ let interference_graph fdef =
         else
           g'
       ) out (if rd <> rs then Graph.add_edge rd rs Preference g else g)
-    | Putchar _ ->
-      (* Putchar écrit dans les registres $v0 et $a0 *)
-      add_edges g (Hashtbl.find live_out n) ["$v0"; "$a0"]
     | Call(_, _) | TailCall(_, _) -> 
       (* Ecriture dans les registres $v, $a et $t *)
       add_edges g (Hashtbl.find live_out n) [

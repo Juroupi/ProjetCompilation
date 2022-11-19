@@ -24,7 +24,6 @@ type vreg = string
    dans un registre virtuel, qui est systématiquement le premier des
    paramètres de l'instruction. *)
 type instruction =
-  | Putchar of vreg
   | SysCall
   (* Lecture de la valeur d'une variable ou d'un paramètre *)
   | Read    of vreg * string
@@ -118,8 +117,6 @@ let pp_program prog out_channel =
 
   let pp_function fdef =
     let rec pp_instr = function
-      | Putchar vr ->
-         print "putchar %s;" vr
       | Read(vrd, x) ->
          print "%s <- *%s;" vrd x
       | Write(x, vr) ->

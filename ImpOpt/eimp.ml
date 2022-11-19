@@ -13,7 +13,6 @@ type mem_access =
   | Stack  of int
 
 type instruction =
-  | Putchar of reg
   | Read    of reg * mem_access
   | Write   of mem_access * reg
   | Move    of reg * reg
@@ -68,8 +67,6 @@ let pp_program prog out_channel =
   let print_margin () = for i=1 to !margin do print "  " done in
 
   let rec pp_instr = function
-    | Putchar vr ->
-       print "putchar %s;" vr
     | Read(vrd, a) ->
        print "%s <- *%s;" vrd (pp_mem_access a)
     | Write(a, vr) ->

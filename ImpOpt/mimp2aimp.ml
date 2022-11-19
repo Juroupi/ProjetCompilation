@@ -99,9 +99,6 @@ let tr_fdef fdef =
 	in 
 
 	let rec tr_instr = function
-		| Mimp.Putchar e ->
-			let r, s = tr_expr e in
-			s ++ Putchar r
 		| Mimp.Set(x, e) ->
 			let r, s = tr_expr e in
 			if List.mem x Mimp.(fdef.locals) then

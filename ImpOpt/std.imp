@@ -1,0 +1,15 @@
+function putchar(c) {
+    syscall(11, c);
+}
+
+function getchar() {
+    return syscall(12);
+}
+
+function print_int(i) {
+    syscall(1, i);
+}
+
+function read_int() {
+    return syscall(5);
+}

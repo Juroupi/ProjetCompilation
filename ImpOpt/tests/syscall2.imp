@@ -1,0 +1,11 @@
+function main() {
+    var c;
+    var i;
+    c = getchar();
+    i = read_int();
+    putchar(c);
+    if (i > 0) { putchar('+'); }
+    print_int(i);
+    putchar('=');
+    putchar(c + i);
+}

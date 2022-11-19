@@ -19,7 +19,6 @@ type expression =
   | SysCall of expression * expression list
 
 type instruction =
-  | Putchar  of expression
   | Set      of string * expression
   | If       of expression * sequence * sequence
   | While    of expression * sequence
@@ -76,8 +75,6 @@ let pp_program prog out_channel =
   let print_margin () = for i=1 to !margin do print "  " done in
 
   let rec pp_instr = function
-    | Putchar e ->
-       print "putchar(%s);" (pp_expr e)
     | Set(x, e) ->
        print "%s = %s;" x (pp_expr e)
     | If(e, s1, s2) ->

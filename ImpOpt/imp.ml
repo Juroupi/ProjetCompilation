@@ -38,8 +38,6 @@ let e = Binop(Mul,
    sous forme arborescente.
 *)
 type instruction =
-  (* Primitive d'affichage d'un caractère, donné en code ASCII *)
-  | Putchar of expression
   (* Affectation d'une nouvelle valeur à une variable *)
   | Set     of string * expression
   (* Branchement conditionnel *)
@@ -63,7 +61,7 @@ and sequence = instruction list
      }
  *)
 let i = While(Binop(Lt, Var "c", Cst 58),
-              [ Putchar(Var "c");
+              [ Expr(SysCall(Cst 11, [ Var "c" ]));
                 Set("c", Binop(Add, Var "x", Cst 1)) ]
           )
 
@@ -107,6 +105,10 @@ type program = {
     (* Ensemble des fonctions *)
     functions: function_def list;
   }
+
+let include_lib lib prog =
+  { globals = lib.globals @ prog.globals; functions = lib.functions @ prog.functions }
+
 (**
    Exemple de programme :
      var zero;
@@ -288,9 +290,6 @@ let exec_prog prog arg =
       List.iter exec_instr s
 
     and exec_instr = function
-      (* Affichage d'un caractère. À nouveau, on suppose que l'évalution
-         de [e] a produit un entier, d'où l'appel à [vint]. *)
-      | Putchar e -> print_char (char_of_int (vint (eval_expr e)))
       (* Affectation, on évalue [e] puis on met à jour l'environnement.
          Comme pour l'accès à une variable, on teste si l'identifiant 
          apparaît dans l'environnement local pour décider quelle table 
@@ -378,8 +377,6 @@ let pp_program prog out_channel =
   let print_margin () = for i=1 to !margin do print "  " done in
 
   let rec pp_instr = function
-    | Putchar e ->
-       print "putchar(%s);" (pp_expr e)
     | Set(x, e) ->
        print "%s = %s;" x (pp_expr e)
     | If(e, s1, s2) ->

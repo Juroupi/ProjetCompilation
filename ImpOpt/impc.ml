@@ -2,12 +2,17 @@ open Format
 
 let () =
 
+  let parse_imp file =
+    let c = open_in file in
+    let lb = Lexing.from_channel c in
+    let imp = Impparser.program Implexer.token lb in
+    close_in c;
+    imp
+  in
+
   (* Lecture et analyse syntaxique *)
   let file = Sys.argv.(1) in
-  let c  = open_in file in
-  let lb = Lexing.from_channel c in
-  let imp_prog = Impparser.program Implexer.token lb in
-  close_in c;
+  let imp_prog = Imp.include_lib (parse_imp "std.imp") (parse_imp file) in
 
   (* Simplification et sélection d'instructions *)
   let mimp_prog = Imp2mimp.tr_program imp_prog in

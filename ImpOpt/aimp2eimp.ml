@@ -90,10 +90,6 @@ let tr_fdef fdef =
      par un emplacement de pile. *)
   let rec tr_instr = function
 
-    | Aimp.Putchar vr ->
-      load1 vr
-      @@ Instr(Putchar(op1 vr))
-
     | Aimp.Read(vrd, x) ->
       Instr(Read(dst vrd, mem_access x))
       @@ save vrd

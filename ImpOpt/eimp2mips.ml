@@ -71,7 +71,6 @@ let tr_fdef prog fdef =
   (* Traduction des instructions : relativement direct, sauf pour les 
      branchements et les boucles *)
   let rec tr_instr = function
-    | Putchar r             -> move a0 r @@ li v0 11 @@ syscall
     | Read(rd, Global x)    -> lv rd x
     | Read(rd, Stack i)     -> read_local rd i
     | Write(Global x, r)    -> sv r x
