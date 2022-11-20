@@ -70,7 +70,7 @@ let tr_fdef prog fdef =
 
   (* Traduction des instructions : relativement direct, sauf pour les 
      branchements et les boucles *)
-  let rec tr_instr = function
+  let rec tr_instr last = function
     | Read(rd, Global x)    -> lv rd x
     | Read(rd, Stack i)     -> read_local rd i
     | Write(Global x, r)    -> sv r x
@@ -87,7 +87,7 @@ let tr_fdef prog fdef =
       assert_call f n; save_live_out live_out @@ jal f @@ restore_live_out live_out
     | If(r, s1, s2)         -> tr_if r s1 s2
     | While(s1, r, s2)      -> tr_while s1 r s2
-    | Return                -> b return_label
+    | Return                -> if last then (decr fdef.returns; nop) else b return_label
     | SysCall               -> syscall
     | TailCall(f, n)        ->
       assert_call f n; tailcall f fdef.params fdef.locals fdef.temps n
@@ -111,10 +111,15 @@ let tr_fdef prog fdef =
       @@ b labels.(0)
     @@ label labels.(1)
 
-  and tr_seq (s: Eimp.sequence) = match s with
-    | Nop         -> nop
-    | Instr i     -> tr_instr i
-    | Seq(s1, s2) -> tr_seq s1 @@ tr_seq s2
+  and tr_seq (s: Eimp.sequence) =
+    let rec tr_seq last (s: Eimp.sequence) =
+      match s with
+      | Nop          -> nop
+      | Instr i      -> tr_instr last i
+      | Seq(s1, Nop) -> tr_seq last s1
+      | Seq(Nop, s2) -> tr_seq last s2
+      | Seq(s1, s2)  -> tr_seq false s1 @@ tr_seq last s2
+    in tr_seq true s
   in
 
   (* Code de la fonction. Il faut prévoir notamment ici, dans l'ordre
@@ -124,11 +129,13 @@ let tr_fdef prog fdef =
      - la convention d'appel, phase "fin d'appel",
      - rendre la main.
    *)
+  let code_seq = tr_seq fdef.code in
+
   comment "\tsauvegarde des registres et allocation d'espace dans la pile"
   @@ init_fun fdef.locals fdef.temps
   @@ comment "\tcode de la fonction"
-  @@ tr_seq fdef.code
-  @@ label return_label
+  @@ code_seq
+  @@ (if !(fdef.returns) > 0 then label return_label else nop)
   @@ comment "\trestauration des registres sauvegardes et de la pile puis retour"
   @@ end_fun fdef.params fdef.locals fdef.temps
   @@ return

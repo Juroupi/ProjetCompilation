@@ -32,7 +32,7 @@ and sequence =
   | Instr   of instruction
   | Nop
 
-let (@@) i1 i2 = Seq(i1, i2)
+let (@@) i1 i2 = if i1 = Nop && i2 = Nop then Nop else Seq(i1, i2)
 let rec seq = function
   | []   -> Nop
   | i::l -> Instr i @@ seq l
@@ -42,6 +42,9 @@ type function_def = {
   params: int; (* string list; *)
   locals: int; (* string list; *)
   temps: int;
+  calls: int;
+  returns: int ref;
+  pushs: int;
   code: sequence;
 }
 

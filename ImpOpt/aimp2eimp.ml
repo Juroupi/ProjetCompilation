@@ -24,7 +24,10 @@ let op2_reg = "$t1"
 (* Fonction principale, de traduction d'une définition de fonction *)
 let tr_fdef fdef =
 
-  let nparams = List.length Aimp.(fdef.params) in
+  let num_params = List.length Aimp.(fdef.params) in
+  let num_calls = ref 0 in
+  let num_returns = ref 0 in
+  let num_pushs = ref 0 in
 
   (* Première tâche : allocation de registres, telle que définie dans le
      module Register_allocation *)
@@ -108,8 +111,7 @@ let tr_fdef fdef =
       @@ save vrd
 
     | Aimp.Push vr ->
-      load1 vr
-      @@ Instr(Push (op1 vr))
+      incr num_pushs; load1 vr @@ Instr(Push (op1 vr))
 
     | Aimp.Pop n ->
       Instr(Pop n)
@@ -129,7 +131,7 @@ let tr_fdef fdef =
       @@ save vrd
 
     | Aimp.Call(f, n) ->
-      Instr(Call(f, n, convert_call_live_out alloc live_out id))
+      incr num_calls; Instr(Call(f, n, convert_call_live_out alloc live_out id))
 
     | Aimp.If(vr, s1, s2) ->
       load1 vr
@@ -139,7 +141,7 @@ let tr_fdef fdef =
       Instr(While(tr_seq s1 @@ load1 vr, op1 vr, tr_seq s2))
 
     | Aimp.Return ->
-      Instr(Return)
+      incr num_returns; Instr(Return)
 
     | Aimp.SysCall ->
       Instr(SysCall)
@@ -158,9 +160,12 @@ let tr_fdef fdef =
      variables locales au nombre d'emplacements utilisés dans la pile. *)
   {
     name = Aimp.(fdef.name);
-    params = nparams;
+    params = num_params;
     locals = num_stacked;
     temps = num_temps;
+    calls = !num_calls;
+    returns = num_returns;
+    pushs = !num_pushs;
     code = tr_seq Aimp.(fdef.code);
   }
 

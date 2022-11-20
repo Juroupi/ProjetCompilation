@@ -6,5 +6,3 @@
 - pointeurs de fonction
 - instruction $zero
 - chaines de caracteres
-
-- ne pas compiler les fonctions non utilisées
