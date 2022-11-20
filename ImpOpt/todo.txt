@@ -6,3 +6,5 @@
 - pointeurs de fonction
 - instruction $zero
 - chaines de caracteres
+
+- le calcul du nombre de temps ne marche pas

@@ -1,7 +1,7 @@
-function test(arg) {
-    return 999;
-}
-
 function main(arg) {
-    test();
+    var c;
+    var i;
+    c = getchar();
+    i = read_int();
+     putchar(i + c);
 }

@@ -148,7 +148,7 @@ let liveness fdef =
         let modified = VSet.of_list [
           "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"; "$t8"; "$t9";
           "$a0"; "$a1"; "$a2"; "$a3";
-          "$v0"
+          "$v0"; "$v1"
         ] in
         (* let read = VSet.of_list (List.init n (fun i -> Printf.sprintf "$a%d" i)) in *)
         let read = VSet.of_list [] in
@@ -168,10 +168,10 @@ let liveness fdef =
         let modified = VSet.of_list [
           "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"; "$t8"; "$t9";
           "$a0"; "$a1"; "$a2"; "$a3";
-          "$v0"
+          "$v0"; "$v1"
         ] in
         let read = VSet.of_list [
-          "$v0"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"
+          "$v0"; "$v1"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"
         ] in
         VSet.union read (VSet.diff out modified)
     | If(r, s1, s2) ->
@@ -381,34 +381,17 @@ let is_areg r =
    il ne pourront pas être alloués sur la pile  *)
 let default_colors =
   List.fold_left (fun colors (x, c) -> VMap.add x c colors) VMap.empty 
-    (List.mapi (fun i x -> x, -(i+1)) 
-      [ "$v0"; "$v1"; 
+    (List.mapi (fun i x -> x, 8-(i+1)) 
+      [ "$t9"; "$t8"; "$t7"; "$t6"; "$t5"; "$t4"; "$t3"; "$t2";
+        "$v0"; "$v1"; 
         "$a0"; "$a1"; "$a2"; "$a3";
         "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7" ])
-
-let num_default_colors = VMap.cardinal default_colors
 
 (* Trouver le registre réel correspondant à une couleur négative *)
 let find_areg_by_color c =
   match vmap_find_first_opt(fun r _ -> VMap.find r default_colors = c) default_colors with
   | None -> failwith (Printf.sprintf "aucun registre associe a la couleur %d" c)
   | Some x -> x
-
-(** Fonction de coloriage simple : une couleur par sommet *)
-let color_simple (g: graph) (k: int): color * int =
-
-  let add_color r (c, n) =
-    if is_areg r || VMap.mem r c then
-      (c, n)
-    else 
-      (VMap.add r n c, n + 1)
-  in
-
-  VMap.fold (fun r1 g' (c, n) ->
-    VMap.fold (fun r2 t (c, n) ->
-      add_color r2 (c, n)
-    ) g' (add_color r1 (c, n))
-  ) g (VMap.empty, 0)
 
 (** Fonction principale de coloriage.
 
@@ -531,9 +514,9 @@ let color (g: graph) (k: int): color =
         registres.
    *)
   and spill g =
-    let choice, _ = VMap.fold (fun x _ v ->
+    let choice, _ = VMap.fold (fun x _ best ->
       let xdegree = degree x g in
-      match v with
+      match best with
       | Some _, bdegree when xdegree > bdegree -> Some x, xdegree
       | None, _ -> Some x, degree x g
       | best -> best
@@ -582,14 +565,20 @@ let convert_vreg k r c =
   else
     Stacked c
 
-let allocation_num allocation =
-  let stacked, actual_t = (VMap.fold (fun x r (stacked, actual_t) ->
+let num_stacked allocation =
+  IntSet.cardinal (VMap.fold (fun x r stacked ->
     match r with
-    | Stacked i -> IntSet.add i stacked, actual_t
-    | Actual r when r.[1] = 't' -> stacked, VSet.add r actual_t
-    | _ -> stacked, actual_t
-  ) allocation (IntSet.empty, VSet.empty)) in
-  IntSet.cardinal stacked, VSet.cardinal actual_t
+    | Stacked i -> IntSet.add i stacked
+    | _ -> stacked
+  ) allocation IntSet.empty)
+
+let num_temps k colors = 
+  IntSet.cardinal (VMap.fold (fun r c temps ->
+    if not (is_areg r) && c >= 0 && c < k then
+      IntSet.add c temps
+    else
+      temps
+  ) colors IntSet.empty)
 
 let allocation (fdef: function_def): register Graph.VMap.t * int * int =
   (* Calculer les vivacités, en déduire un graphe d'interférence, 
@@ -602,7 +591,8 @@ let allocation (fdef: function_def): register Graph.VMap.t * int * int =
   let graph = interference_graph fdef in
   let colors = color graph 8 in
   let allocation = VMap.mapi (convert_vreg 8) colors in
-  let num_stacked, num_actual_t = allocation_num allocation in
+  let num_stacked = num_stacked allocation in
+  let num_temps = num_temps 8 colors in
   (* print_graph graph;
   print_colors colors; *)
-  (allocation, num_stacked, num_actual_t)
+  (allocation, num_stacked, num_temps)

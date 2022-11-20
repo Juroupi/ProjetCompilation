@@ -1,5 +1,3 @@
-TEST = test
-
 %.asm: %.imp std.imp impc.byte
 	./impc.byte $<
 
