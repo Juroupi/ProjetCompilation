@@ -88,7 +88,7 @@ let tr_function fdef = {
   }
 
 (* Traduction directe *)
-let tr_program prog = {
+let tr_program prog ={
     globals = Imp.(prog.globals);
-    functions = List.map tr_function Imp.(prog.functions)
+    functions = List.map tr_function Imp.(prog_used_functions prog)
   }

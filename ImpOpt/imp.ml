@@ -109,6 +109,55 @@ type program = {
 let include_lib lib prog =
   { globals = lib.globals @ prog.globals; functions = lib.functions @ prog.functions }
 
+(* Récupération de la liste des fonctions utilisées *)
+
+module FMap = Map.Make(String)
+
+let find_fdef prog name =
+  List.find (fun fdef -> fdef.name = name) prog.functions
+
+let rec add_used_function prog used fname =
+  if not (FMap.mem fname used) then
+    let fdef = find_fdef prog fname in
+    fdef_used_functions prog (FMap.add fdef.name fdef used) fdef
+  else
+    used
+
+and expr_used_functions prog used = function
+  | Binop(op, e1, e2) ->
+    expr_used_functions prog (expr_used_functions prog used e1) e2
+  | Unop(op, e) ->
+    expr_used_functions prog used e
+  | SysCall(code, args) ->
+    List.fold_left (expr_used_functions prog) used (code :: args)
+  | Call(f, args) ->
+    List.fold_left (expr_used_functions prog) (add_used_function prog used f) args
+  | _ -> used
+
+and instr_used_functions prog used = function
+  | If(e, s1, s2) ->
+      let used = seq_used_functions prog used s1 in
+      let used = seq_used_functions prog used s2 in
+      expr_used_functions prog used e
+  | While(e, s) ->
+      let used = seq_used_functions prog used s in
+      expr_used_functions prog used e
+  | Return e | Expr e | Set(_, e) ->
+    expr_used_functions prog used e
+  | TailCall(f, args) ->
+    expr_used_functions prog used (Call(f, args))
+
+and seq_used_functions prog used seq =
+  List.fold_left (instr_used_functions prog) used seq
+
+and fdef_used_functions prog used fdef =
+  seq_used_functions prog used fdef.code
+
+and prog_used_functions prog =
+  let main = find_fdef prog "main" in
+  let used = FMap.singleton "main" main in
+  FMap.fold (fun _ fdef l -> fdef :: l) (fdef_used_functions prog used main) []
+
 (**
    Exemple de programme :
      var zero;

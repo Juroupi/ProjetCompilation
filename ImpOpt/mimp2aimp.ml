@@ -72,15 +72,17 @@ let tr_fdef fdef =
 			(* Il faut réaliser ici la convention d'appel : passer les arguments
 			   de la bonne manière, et renvoyer le résultat dans $v0. *)
 			let nargs = List.length args in
+			let res = new_vreg() in
 			let s = 
 				if nargs > 0 then 
 					(tr_args args) ++ (Call (f, nargs))
 				else
 					Nop ++ (Call (f, 0))
-			in "$v0", s
+			in res, s ++ (Move(res, "$v0"))
 		| Mimp.SysCall(code, args) ->
 			let r, s = tr_expr code in
-			"$v0", s ++ (Move("$v0", r)) @@ (tr_syscall_args args) ++ SysCall
+			let res = new_vreg () in
+			res, s ++ (Move("$v0", r)) @@ (tr_syscall_args args) ++ SysCall ++ (Move(res, "$v0"))
 	
 	and tr_syscall_args args =
 		let rec tr_syscall_args i args = match i, args with

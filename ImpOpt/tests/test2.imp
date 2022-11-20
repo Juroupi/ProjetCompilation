@@ -1,7 +1,3 @@
 function main(arg) {
-    var c;
-    var i;
-    c = getchar();
-    i = read_int();
-    putchar(i + c);
+    putchar(getchar() + read_int());
 }
