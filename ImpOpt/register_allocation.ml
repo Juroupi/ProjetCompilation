@@ -377,8 +377,7 @@ let choose_color (v: VSet.t) (colors: color): int =
 let is_areg r =
   r.[0] = '$'
 
-(* Coloration par défaut : les registres réels sont coloriés avec des couleurs négatives,
-   il ne pourront pas être alloués sur la pile  *)
+(* Coloration par défaut pour les registres réels *)
 let default_colors =
   List.fold_left (fun colors (x, c) -> VMap.add x c colors) VMap.empty 
     (List.mapi (fun i x -> x, 8-(i+1)) 
@@ -387,10 +386,10 @@ let default_colors =
         "$a0"; "$a1"; "$a2"; "$a3";
         "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7" ])
 
-(* Trouver le registre réel correspondant à une couleur négative *)
+(* Trouver le registre réel correspondant à une couleur *)
 let find_areg_by_color c =
   match vmap_find_first_opt(fun r _ -> VMap.find r default_colors = c) default_colors with
-  | None -> failwith (Printf.sprintf "aucun registre associe a la couleur %d" c)
+  | None -> failwith (Printf.sprintf "aucun registre reel associe a la couleur %d" c)
   | Some x -> x
 
 (** Fonction principale de coloriage.
@@ -560,8 +559,6 @@ let convert_vreg k r c =
     Actual r
   else if c < 0 then
     Actual (find_areg_by_color c)
-  else if c < k then
-    Actual (Printf.sprintf "$t%d" (c + 2))
   else
     Stacked c
 
