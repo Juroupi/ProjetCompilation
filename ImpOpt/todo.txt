@@ -7,4 +7,4 @@
 - instruction $zero
 - chaines de caracteres
 
-- le calcul du nombre de temps ne marche pas
+- ne pas compiler les fonctions non utilisées

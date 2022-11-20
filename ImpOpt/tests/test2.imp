@@ -3,5 +3,5 @@ function main(arg) {
     var i;
     c = getchar();
     i = read_int();
-     putchar(i + c);
+    putchar(i + c);
 }

@@ -149,8 +149,14 @@ let local_shift i = if i < 0 then (-i*4) else (-i*4-8)
 let write_local r i = sw r (local_shift i) fp
 let read_local r i = lw r (local_shift i) fp
 
-let rec save_temps n = if n > 0 then move (s (n-1)) (t (n+1)) @@ save_temps (n-1) else nop
-let rec restore_temps n = if n > 0 then move (t (n+1)) (s (n-1)) @@ restore_temps (n-1) else nop
+let map_live_out f live_out =
+  let rec map_live_out n = function
+  | [] -> nop
+  | r :: live_out ->
+    (if r.[1] = 't' then f (s n) r else nop) @@ map_live_out (n+1) live_out
+  in map_live_out 0 live_out
+let save_live_out = map_live_out (fun s t -> move s t)
+let restore_live_out = map_live_out (fun s t -> move t s)
 
 let push_list l =
   let seq, n = List.fold_left (fun (seq, i) r -> seq @@ store r i, i + 1) (nop, 0) l in

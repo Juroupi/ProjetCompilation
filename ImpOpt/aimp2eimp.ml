@@ -28,7 +28,7 @@ let tr_fdef fdef =
 
   (* Première tâche : allocation de registres, telle que définie dans le
      module Register_allocation *)
-  let alloc, num_stacked, num_actual_t = allocation fdef in
+  let alloc, num_stacked, num_temps, live_out = allocation fdef in
 
   (* Tester si deux registres virtuels ont le même registre réel *)
   let same_reg v1 v2 =
@@ -88,7 +88,7 @@ let tr_fdef fdef =
      remplacé par un registre réel, en ajoutant une instruction de lecture
      ou une instruction d'écriture lorsqu'un registre virtuel est réalisé
      par un emplacement de pile. *)
-  let rec tr_instr = function
+  let rec tr_instr id = function
 
     | Aimp.Read(vrd, x) ->
       Instr(Read(dst vrd, mem_access x))
@@ -129,7 +129,7 @@ let tr_fdef fdef =
       @@ save vrd
 
     | Aimp.Call(f, n) ->
-      Instr(Call(f, n))
+      Instr(Call(f, n, convert_call_live_out alloc live_out id))
 
     | Aimp.If(vr, s1, s2) ->
       load1 vr
@@ -149,7 +149,7 @@ let tr_fdef fdef =
 
   and tr_seq = function
     | Aimp.Seq(s1, s2) -> Seq(tr_seq s1, tr_seq s2)
-    | Aimp.Instr(_, i) -> tr_instr i
+    | Aimp.Instr(n, i) -> tr_instr n i
     | Aimp.Nop         -> Nop
   in
 
@@ -160,7 +160,7 @@ let tr_fdef fdef =
     name = Aimp.(fdef.name);
     params = nparams;
     locals = num_stacked;
-    temps = num_actual_t;
+    temps = num_temps;
     code = tr_seq Aimp.(fdef.code);
   }
 

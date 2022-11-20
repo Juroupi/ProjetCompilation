@@ -83,8 +83,8 @@ let tr_fdef prog fdef =
     | Unop(rd, Minus, r)    -> neg rd r
     | Unop(rd, Not, r)      -> not_ rd r
     | Binop(rd, op, r1, r2) -> (tr_binop op) rd r1 r2
-    | Call(f, n)            ->
-      assert_call f n; save_temps fdef.temps @@ jal f @@ restore_temps fdef.temps 
+    | Call(f, n, live_out)  ->
+      assert_call f n; save_live_out live_out @@ jal f @@ restore_live_out live_out
     | If(r, s1, s2)         -> tr_if r s1 s2
     | While(s1, r, s2)      -> tr_while s1 r s2
     | Return                -> b return_label

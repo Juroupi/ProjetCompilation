@@ -238,12 +238,7 @@ let liveness fdef =
    types d'arêtes à la même paire (r, rd), on ne conserve que l'arête
    d'interférence.
  *)
-let interference_graph fdef =
-
-  (* Table de hachage contenant les informations de vivacité en sortie
-     de chaque instruction, qu'on consultera pour appliquer le critère
-     précédent. *)
-  let live_out = liveness fdef in
+let interference_graph fdef live_out =
 
   (* Initialisation d'un graphe sans arêtes, avec un sommet pour chaque
      variables locale (ie. chaque registre virtuel). *)
@@ -555,12 +550,19 @@ type register =
   | Stacked of int
 
 let convert_vreg k r c =
-  if is_areg r then
-    Actual r
-  else if c < 0 then
+  if c < k then
     Actual (find_areg_by_color c)
   else
     Stacked c
+
+let convert_call_live_out allocation live_out id =
+  let call_live_out = Hashtbl.find live_out id in
+  let call_areg_live_out = VSet.fold (fun r l ->
+    match VMap.find r allocation with
+    | Actual r -> VSet.add r l
+    | _ -> l
+  ) call_live_out VSet.empty in
+  VSet.elements call_areg_live_out
 
 let num_stacked allocation =
   IntSet.cardinal (VMap.fold (fun x r stacked ->
@@ -577,7 +579,7 @@ let num_temps k colors =
       temps
   ) colors IntSet.empty)
 
-let allocation (fdef: function_def): register Graph.VMap.t * int * int =
+let allocation (fdef: function_def): register Graph.VMap.t * int * int * (int, VSet.t) Hashtbl.t =
   (* Calculer les vivacités, en déduire un graphe d'interférence, 
      le colorier, puis en déduire :
      - une affectation concrète de chaque sommet à un registre réel
@@ -585,11 +587,12 @@ let allocation (fdef: function_def): register Graph.VMap.t * int * int =
      - le nombre d'emplacements de pile utilisés.
      - le nombre de registres $t utilisés.
    *)
-  let graph = interference_graph fdef in
+  let live_out = liveness fdef in
+  let graph = interference_graph fdef live_out in
   let colors = color graph 8 in
   let allocation = VMap.mapi (convert_vreg 8) colors in
   let num_stacked = num_stacked allocation in
   let num_temps = num_temps 8 colors in
   (* print_graph graph;
   print_colors colors; *)
-  (allocation, num_stacked, num_temps)
+  (allocation, num_stacked, num_temps, live_out)
