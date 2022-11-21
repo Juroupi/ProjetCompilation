@@ -1,6 +1,8 @@
 function main() {
-    var a = 'a', b = 'b';
-    putchar('a');
-    var c = 'c', d = 'd';
-    putchar('b');
+    var a = '\\', b = 'b';
+    putchar(a);
+    putchar(b);
+    var c = '\n', d = 'd';
+    putchar(c);
+    putchar(d);
 }

@@ -1,4 +1,3 @@
-- caractères échapés
 - tableaux
 - pointeurs de fonction
 - instruction $zero

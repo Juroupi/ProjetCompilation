@@ -20,7 +20,12 @@
     fun s ->
       try  Hashtbl.find h s
       with Not_found -> IDENT(s)
-        
+    
+    let escape = function
+        | 'n' -> '\n'
+        | 'r' -> '\r'
+        | 't' -> '\t'
+        | c -> c
 }
 
 let digit = ['0'-'9']
@@ -39,7 +44,9 @@ rule token = parse
       { comment lexbuf; token lexbuf }
   | number as n
       { CST(int_of_string n) }
-  | "'" (_ as c) "'"
+  | "'\\" (_ as c) "'"
+      { CST(Char.code (escape c)) }
+  | "'" ([^ '\\' '\''] as c) "'"
       { CST(Char.code c) }
   | ident as id
       { keyword_or_ident id }
