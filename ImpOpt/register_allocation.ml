@@ -118,7 +118,7 @@ let liveness fdef =
        VSet.add r out
     | Write(a, _, _, r) ->
       VSet.add r (VSet.add a out)
-    | Get(rd, _) | Cst(rd, _) -> 
+    | Get(rd, _) | Cst(rd, _) | Str(rd, _) -> 
        (* Lecture d'une variable globale, ou chargement d'une constante :
           aucun registre virtuel n'est lu, et un registre [rd] de destination
           est modifié. Le registre [rd] n'est donc pas vivant en entrée. *)
@@ -288,7 +288,7 @@ let interference_graph fdef live_out =
       interférences trouvées dans l'instruction [i], de numéro [n].
    *)
   and instr n i g = match i with
-    | Get(rd, _) | Read(rd, _, _, _) | Cst(rd, _) | Unop(rd, _, _) | Binop(rd, _, _, _) ->
+    | Get(rd, _) | Read(rd, _, _, _) | Cst(rd, _) | Str(rd, _) | Unop(rd, _, _) | Binop(rd, _, _, _) ->
        (* Dans chacun de ces cas l'instruction écrit uniquement dans le
           registre [rd]. On ajoute à g une arête entre rd et chaque
           (autre) registre virtuel vivant en sortie. *)

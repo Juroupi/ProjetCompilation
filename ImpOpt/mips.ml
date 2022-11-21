@@ -148,7 +148,7 @@ let label (s: label) = S ( s ^ ":\n" )
 let syscall = S "\tsyscall\n"
 let comment s = S ("# " ^ s ^ "\n")
 let newline = S ("\n")
-let asciiz s = ins ".asciiz %S" s
+let asciiz s = ins ".asciiz \"%s\"" s
 let dword l = ins ".word %a" pr_ilist l
 
 let (@@) x y = C (x, y)
@@ -213,28 +213,6 @@ let tailcall fname src_params src_locals src_saved src_calls dst_params =
   @@ end_fun src_params src_locals src_saved src_calls
   @@ move_params dst_params
   @@ j fname
-
-(*let tailcall f src_params src_saved src_locals dst_params =
-
-  let rec move_tailcall_params n dist =
-    if n = 0 then 
-      nop 
-    else
-      move_tailcall_params (n-1) dist
-      @@ lw t0 (n*4) sp
-      @@ sw t0 (n*4+dist*4) sp
-  in
-
-  let taillcall_restore_saved n dist =
-    nop
-  in
-  
-  comment (Printf.sprintf "\tappel terminal de %s" f)
-  @@ lw ra (-4) fp @@ lw fp 0 fp
-  @@ taillcall_restore_saved 0 0
-  @@ move_tailcall_params dst_params (src_params + 1 + src_locals)
-  @@ pop (2 + src_locals + dst_params)
-  @@ j f *)
 
 type program = { text : [ `text ] asm;
                  data : [ `data ] asm; }

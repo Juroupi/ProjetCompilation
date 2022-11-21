@@ -1,0 +1,3 @@
+function main() {
+    print_string("salut les\n gens");
+}

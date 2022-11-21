@@ -12,18 +12,20 @@ open Ops
  *)
 type expression =
   (* Constante entière : 0, -1, 42, ... *)
-  | Cst   of int
+  | Cst     of int
   (* Constante booléenne : true, false *)
-  | Bool  of bool
+  | Bool    of bool
+  (* Chaine de caractères *)
+  | Str     of string
   (* Variable, identifiée par une chaîne de caractères *)
-  | Var   of string
+  | Var     of string
   (* Opération binaire, avec un opérateur et deux opérandes *)
-  | Binop of binop * expression * expression
+  | Binop   of binop * expression * expression
   (* Opération unaire, avec un opérateur et une opérande *)
-  | Unop of unop * expression
+  | Unop    of unop * expression
   (* Appel de fonction, avec un identifiant de fonction et une 
      liste de paramètres *)
-  | Call  of string * expression list
+  | Call    of string * expression list
   | SysCall of expression * expression list
 
 (**
@@ -350,6 +352,7 @@ let rec pp_params = function
 let rec pp_expr = function
   | Cst n -> string_of_int n
   | Bool b -> if b then "true" else "false"
+  | Str s -> "\"" ^ s ^ "\""
   | Var x -> x
   | Unop(op, e) -> pp_unop (pp_expr e) op
   | Binop(op, e1, e2) -> 

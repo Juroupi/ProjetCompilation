@@ -1,0 +1,24 @@
+function invert_case(c) {
+
+    if (c >= 'A' && c <= 'Z') {
+        return c - 'A' + 'a';
+    } 
+
+    else if (c >= 'a' && c <= 'z') {
+        return c - 'a' + 'A';
+    }
+
+    return c;
+}
+
+function main() {
+
+    var s = read_string(100);
+    var l = strlen(s);
+
+    for (var i = 0; i < l; i++) {
+        s[i:1] = invert_case(s[i:1]);
+    }
+
+    print_string(s);
+}

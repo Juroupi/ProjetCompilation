@@ -20,6 +20,7 @@ type instruction =
   | Push    of reg
   | Pop     of int
   | Cst     of reg * int
+  | Str     of reg * string
   | Unop    of reg * unop * reg
   | Binop   of reg * binop * reg * reg
   | Call    of string * int * reg list
@@ -49,6 +50,7 @@ type function_def = {
 }
 
 type program = {
+   strings: (string * string) list;
    globals: string list;
    functions: function_def list;
 }
@@ -79,6 +81,8 @@ let pp_program prog out_channel =
        print "%s <- %s;" vrd vr
     | Cst(vrd, n) ->
        print "%s <- %i;" vrd n
+    | Str(vrd, name) ->
+       print "%s <- &%s;" vrd name
     | Unop(vrd, op, vr) ->
        print "%s <- %s;" vrd (pp_unop vr op)
     | Binop(vrd, op, vr1, vr2) -> 

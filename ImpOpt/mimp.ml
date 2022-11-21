@@ -12,6 +12,7 @@ open Ops
 type expression =
   | Cst   of int
   | Bool  of bool
+  | Str   of string
   | Var   of string
   | Unop  of unop * expression
   | Binop of binop * expression * expression
@@ -55,6 +56,7 @@ let rec pp_params = function
 let rec pp_expr = function
   | Cst n -> string_of_int n
   | Bool b -> if b then "true" else "false"
+  | Str s -> "\"" ^ s ^ "\""
   | Var x -> x
   | Unop(op, e) -> pp_unop (pp_expr e) op
   | Binop(op, e1, e2) -> 

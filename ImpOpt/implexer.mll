@@ -49,6 +49,8 @@ rule token = parse
       { CST(Char.code (escape c)) }
   | "'" ([^ '\\' '\''] as c) "'"
       { CST(Char.code c) }
+  | "\"" (([^'"' '\\'] | ('\\' _))* as s) "\""
+      { STR(s) }
   | ident as id
       { keyword_or_ident id }
   | ";"

@@ -1,4 +1,4 @@
 - pointeurs de fonction
 - instruction $zero
-- chaines de caracteres
 - faire plus de unop et de fonctions mk_binop/unop + changer l'incrementation en unop dans le parser
+- parametres de fonctions dans les registres

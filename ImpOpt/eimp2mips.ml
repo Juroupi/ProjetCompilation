@@ -91,6 +91,7 @@ let tr_fdef prog fdef =
     | Push r                   -> push r
     | Pop n                    -> pop n
     | Cst(rd, n)               -> li rd n
+    | Str(rd, name)            -> la rd name
     | Unop(rd, op, r)      -> (tr_unop op) rd r
     | Binop(rd, op, r1, r2)    -> (tr_binop op) rd r1 r2
     | Call(f, n, live_out)     ->
@@ -226,9 +227,11 @@ let tr_prog prog =
     prog.functions nop
   in
   let text = init @@ function_codes @@ built_ins @@ newline
-  and data = comment "variables globales" @@ List.fold_right
-    (fun id code -> label id @@ dword [0] @@ code)
-    prog.globals nop
+  and data =
+    comment "variables globales"
+    @@ (List.fold_right (fun id code -> label id @@ dword [0] @@ code) prog.globals nop)
+    @@ comment "chaines de caracteres"
+    @@ (List.fold_right (fun (id, str) code -> label id @@ asciiz str @@ code) prog.strings nop)
   in
   
   { text; data }

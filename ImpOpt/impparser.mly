@@ -4,6 +4,25 @@
   open Imp
   open Ops
 
+  type function_content = {
+    locals: string list;
+    code: sequence;
+  }
+
+  let content locals code = {
+    locals = locals;
+    code = code;
+  }
+
+  let merge c1 c2 = {
+    locals = c1.locals @ c2.locals;
+    code = c1.code @ c2.code;
+  }
+
+  let control c1 c2 code = {
+    locals = c1.locals @ c2.locals;
+    code = code;
+  }
 %}
 
 %token PLUS MINUS STAR SLASH PRCT
@@ -13,6 +32,7 @@
 
 %token <int> CST
 %token <bool> BOOL
+%token <string> STR
 %token <string> IDENT
 %token VAR FUNCTION COMMA
 %token LPAR RPAR BEGIN END LBRACK RBRACK SEMI COLON
@@ -39,6 +59,7 @@ global_decl:
 program:
 | globals=list(global_decl) functions=list(function_def) EOF
     { {functions; globals = List.concat globals} }
+
 | error { let pos = $startpos in
           let message =
             Printf.sprintf
@@ -50,9 +71,9 @@ program:
 
 function_def:
 | FUNCTION name=IDENT LPAR params=separated_list(COMMA, IDENT) RPAR BEGIN 
-    code=instruction_list
+    content=instruction_list
   END
-  { { name; code = snd code; params; locals = fst code } }
+  { { name; code = content.code; params; locals = content.locals; } }
 ;
 
 variables_decl:
@@ -60,57 +81,65 @@ variables_decl:
 ;
 
 variable_init_list:
-| v=variable_init { fst v, snd v }
-| v=variable_init COMMA l=variable_init_list { fst v @ fst l, snd v @ snd l }
+| v=variable_init { v }
+| v=variable_init COMMA l=variable_init_list { merge v l }
 
 variable_init:
-| id=IDENT SET e=expression { [id], [Set(id, e)] }
-| id=IDENT { [id], [] }
+| id=IDENT SET e=expression { content [id] [Set(id, e)] }
+| id=IDENT { content [id] [] }
 ;
 
 instruction_list:
-| { [], [] }
-| i=instruction l=instruction_list { fst i @ fst l, snd i @ snd l }
+| { content [] [] }
+| i=instruction l=instruction_list { merge i l }
 
 for_incr_instruction:
-| id=IDENT SET e=expression { [], [Set(id, e)] }
-| id=IDENT INCR { [], [Set(id, Binop(Add, Var id, Cst 1))] }
-| id=IDENT DECR { [], [Set(id, Binop(Sub, Var id, Cst 1))] }
-| e=expression { [], [Expr(e)] }
-| STAR ptr=expression SET e=expression { [], [Write(ptr, 0, 4, e)] }
+| id=IDENT SET e=expression
+    { content [] [Set(id, e)] }
+| id=IDENT INCR
+    { content [] [Set(id, Binop(Add, Var id, Cst 1))] }
+| id=IDENT DECR
+    { content [] [Set(id, Binop(Sub, Var id, Cst 1))] }
+| e=expression
+    { content [] [Expr(e)] }
+| STAR ptr=expression SET e=expression
+    { content [] [Write(ptr, 0, 4, e)] }
 | array=expression LBRACK index=expression RBRACK SET e=expression
-    { [], [Write(Binop(Add, array, index), 0, 4, e)] }
+    { content [] [Write(Binop(Add, array, index), 0, 4, e)] }
 | array=expression LBRACK index=expression COLON s=CST RBRACK SET e=expression
-    { [], [Write(Binop(Add, array, Binop(Mul, index, Cst s)), 0, s, e)] }
+    { content [] [Write(Binop(Add, array, Binop(Mul, index, Cst s)), 0, s, e)] }
 ;
 
 for_init_instruction:
-| locals=variables_decl { fst locals, snd locals }
+| locals=variables_decl { locals }
 | i=for_incr_instruction { i }
 ;
 
 instruction:
 | i=for_init_instruction SEMI { i }
-| IF LPAR c=expression RPAR
-    BEGIN s1=instruction_list END
-    ELSE BEGIN s2=instruction_list END { fst s1 @ fst s2, [If(c, snd s1, snd s2)] }
-| IF LPAR c=expression RPAR
-    BEGIN s1=instruction_list END
-    ELSE s2=instruction { fst s1 @ fst s2, [If(c, snd s1, snd s2)] }
-| IF LPAR c=expression RPAR
-    BEGIN s1=instruction_list END { fst s1, [If(c, snd s1, [])] }
-| WHILE LPAR c=expression RPAR
-    BEGIN s=instruction_list END { fst s, [While(c, snd s)] }
+| IF LPAR c=expression RPAR BEGIN s1=instruction_list END ELSE BEGIN s2=instruction_list END
+    { control s1 s2 [If(c, s1.code, s2.code)] }
+| IF LPAR c=expression RPAR BEGIN s1=instruction_list END ELSE s2=instruction
+    { control s1 s2 [If(c, s1.code, s2.code)] }
+| IF LPAR c=expression RPAR BEGIN s1=instruction_list END
+    { content s1.locals [If(c, s1.code, [])] }
+| WHILE LPAR c=expression RPAR BEGIN s=instruction_list END
+    { content s.locals [While(c, s.code)] }
 | FOR LPAR init=for_init_instruction SEMI cond=expression SEMI incr=for_incr_instruction RPAR
-    BEGIN s=instruction_list END { fst init @ fst incr @ fst s, snd init @ [While(cond, snd s @ snd incr)] }
-| RETURN e=expression_except_call SEMI { [], [Return(e)] }
-| RETURN SEMI { [], [Return(Cst(0))] }
-| RETURN f=IDENT LPAR params=separated_list(COMMA, expression) RPAR SEMI { [], [TailCall(f, params)] }
+    BEGIN s=instruction_list END
+    { merge init (control incr s [While(cond, s.code @ incr.code)]) }
+| RETURN e=expression_except_call SEMI
+    { content [] [Return(e)] }
+| RETURN SEMI
+    { content [] [Return(Cst(0))] }
+| RETURN f=IDENT LPAR params=separated_list(COMMA, expression) RPAR SEMI
+    { content [] [TailCall(f, params)] }
 ;
 
 expression_except_call:
 | n=CST { Cst(n) }
 | b=BOOL { Bool(b) }
+| s=STR { Str(s) }
 | id=IDENT { Var(id) }
 | LPAR e=expression RPAR { e }
 | STAR ptr=expression { Unop(Deref(0, 4), ptr) }

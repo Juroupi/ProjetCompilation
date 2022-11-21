@@ -129,6 +129,10 @@ let tr_fdef fdef =
       Instr(Cst(dst vrd, n))
       @@ save vrd
 
+    | Aimp.Str(vrd, name) ->
+      Instr(Str(dst vrd, name))
+      @@ save vrd
+
     | Aimp.Unop(vrd, op, vr) ->
       load1 vr
       @@ Instr(Unop(dst vrd, op, op1 vr))
@@ -179,6 +183,7 @@ let tr_fdef fdef =
 
 (* Traduction directe *)
 let tr_prog prog = {
+  strings = Aimp.(prog.strings);
   globals = Aimp.(prog.globals);
   functions = List.map tr_fdef Aimp.(prog.functions);
 }

@@ -86,6 +86,7 @@ let mk_unop = function
 let rec tr_expr = function
   | Imp.Cst n -> Cst n
   | Imp.Bool b -> Cst (if b then 1 else 0)
+  | Imp.Str s -> Str s
   | Imp.Var x -> Var x
   | Imp.Unop(op, e) -> mk_unop op (tr_expr e)
   | Imp.Binop(op, e1, e2) -> mk_binop op (tr_expr e1) (tr_expr e2)

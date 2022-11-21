@@ -35,6 +35,8 @@ type instruction =
   | Move    of vreg * vreg
   (* Chargement d'une valeur constante *)
   | Cst     of vreg * int
+  (* Chargement d'une chaine de caractères *)
+  | Str     of vreg * string
   (* Opérations arithmétiques *)
   | Unop    of vreg * unop * vreg
   | Binop   of vreg * binop * vreg * vreg
@@ -80,16 +82,17 @@ let (++) s  i  = Seq(s, lift i)
 
 
 type function_def = {
-    name: string;
-    params: string list;
-    locals: string list;
-    code: sequence;
-  }
+   name: string;
+   params: string list;
+   locals: string list;
+   code: sequence;
+}
 
 type program = {
-    globals: string list;
-    functions: function_def list;
-  }
+   strings: (string * string) list;
+   globals: string list;
+   functions: function_def list;
+}
 
 
 
@@ -131,6 +134,8 @@ let pp_program prog out_channel =
          print "%s <- %s;" vrd vr
       | Cst(vrd, n) ->
          print "%s <- %i;" vrd n
+      | Str(vrd, name) ->
+         print "%s <- &%s;" vrd name
       | Unop(vrd, op, vr) ->
          print "%s <- %s;" vrd (pp_unop vr op)
       | Binop(vrd, op, vr1, vr2) -> 

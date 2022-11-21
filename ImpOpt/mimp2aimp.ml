@@ -26,19 +26,32 @@
 open Aimp
 
 (* Fonction principale, de traduction d'une définition de fonction *)
-let tr_fdef fdef =
+let tr_fdef strings fdef =
+
 	(* Liste des registres virtuels. Elle est initialisée avec les variables
 		locales et sera étendue à chaque création d'un nouveau registre
 		virtuel. *)
 	let vregs = ref Mimp.(fdef.locals) in
 	(* Fonction de génération de nouveaux registres virtuels.
 		Renvoie le nouveau nom, et étend la liste. *)
-	let counter = ref 0 in
+	let vreg_counter = ref 0 in
 	let new_vreg () =
-		let name = Printf.sprintf "#%i" !counter in
+		let name = Printf.sprintf "#%i" !vreg_counter in
 		vregs := name :: !vregs;
-		incr counter;
+		incr vreg_counter;
 		name
+	in
+
+	(* Génération d'un label pour une chaine de caractères *)
+	let str_counter = ref 0 in
+	let new_str_name str =
+		match Hashtbl.find_opt strings str with
+		| Some name -> name
+		| None ->
+			let name = Printf.sprintf "_string_%i" !str_counter in
+			Hashtbl.add strings name str;
+			incr str_counter;
+			name
 	in
 
 	(* Fonction de traduction des expressions.
@@ -51,6 +64,10 @@ let tr_fdef fdef =
 			let r = new_vreg() in 
 			let n = if b then 1 else 0 in
 			r, Nop ++ Cst(r, n)
+		| Mimp.Str str ->
+			let r = new_vreg() in
+			let name = new_str_name str in
+			r, Nop ++ Str(r, name)
 		| Mimp.Var x ->
 			(* Il faut distinguer ici entre variables locales, paramètres et
 				variables globales. *)
@@ -153,7 +170,11 @@ let tr_fdef fdef =
 }
 
 (* Traduction directe *)
-let tr_prog p = {
-	globals = Mimp.(p.globals);
-	functions = List.map tr_fdef Mimp.(p.functions)
-}
+let tr_prog p =
+	let strings : (string, string) Hashtbl.t = Hashtbl.create 16 in
+	let functions = List.map (tr_fdef strings) Mimp.(p.functions) in
+	{
+		strings = Hashtbl.fold (fun name str l -> (name, str) :: l) strings [];
+		globals = Mimp.(p.globals);
+		functions = functions;
+	}

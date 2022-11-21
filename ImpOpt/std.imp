@@ -22,6 +22,12 @@ function smalloc(n, s) {
     return syscall(9, n*s);
 }
 
+function read_string(n) {
+    var s = malloc(n+2);
+    syscall(8, s, n+1);
+    return s;
+}
+
 function print_string(s) {
     syscall(4, s);
 }
