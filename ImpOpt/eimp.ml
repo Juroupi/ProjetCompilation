@@ -43,8 +43,7 @@ type function_def = {
   locals: int; (* string list; *)
   temps: int;
   calls: int;
-  returns: int ref;
-  pushs: int;
+  returns: int;
   code: sequence;
 }
 

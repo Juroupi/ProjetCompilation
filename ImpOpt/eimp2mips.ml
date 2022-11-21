@@ -60,6 +60,8 @@ let tr_fdef prog fdef =
      (ou même en absence de return !). Cette étiquette est prévue pour cela. *)
   let return_label = new_label "return" in
 
+  let num_returns = ref fdef.returns in
+
   (* Traduction d'un opérateur binaire *)
   let tr_binop = function
     | Add -> add | Sub -> sub | Mul -> mul | Div -> div | Rem -> rem
@@ -72,9 +74,9 @@ let tr_fdef prog fdef =
      branchements et les boucles *)
   let rec tr_instr last = function
     | Read(rd, Global x)    -> lv rd x
-    | Read(rd, Stack i)     -> read_local rd i
+    | Read(rd, Stack i)     -> read_local fdef.calls rd i
     | Write(Global x, r)    -> sv r x
-    | Write(Stack i, r)     -> write_local r i
+    | Write(Stack i, r)     -> write_local fdef.calls r i
     | Move(rd, r)           -> move rd r
     | Push r                -> push r
     | Pop n                 -> pop n
@@ -87,10 +89,10 @@ let tr_fdef prog fdef =
       assert_call f n; save_live_out live_out @@ jal f @@ restore_live_out live_out
     | If(r, s1, s2)         -> tr_if r s1 s2
     | While(s1, r, s2)      -> tr_while s1 r s2
-    | Return                -> if last then (decr fdef.returns; nop) else b return_label
+    | Return                -> if last then (decr num_returns; nop) else b return_label
     | SysCall               -> syscall
     | TailCall(f, n)        ->
-      assert_call f n; tailcall f fdef.params fdef.locals fdef.temps n
+      assert_call f n; tailcall f fdef.params fdef.locals fdef.temps fdef.calls n
 
   and tr_if r s1 s2 =
     let labels = new_labels [| "if"; "else"; "end_if" |] in
@@ -132,12 +134,12 @@ let tr_fdef prog fdef =
   let code_seq = tr_seq fdef.code in
 
   comment "\tsauvegarde des registres et allocation d'espace dans la pile"
-  @@ init_fun fdef.locals fdef.temps
+  @@ init_fun fdef.locals fdef.temps fdef.calls
   @@ comment "\tcode de la fonction"
   @@ code_seq
-  @@ (if !(fdef.returns) > 0 then label return_label else nop)
+  @@ (if !num_returns > 0 then label return_label else nop)
   @@ comment "\trestauration des registres sauvegardes et de la pile puis retour"
-  @@ end_fun fdef.params fdef.locals fdef.temps
+  @@ end_fun fdef.params fdef.locals fdef.temps fdef.calls
   @@ return
 
 

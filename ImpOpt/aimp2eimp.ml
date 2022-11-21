@@ -27,7 +27,6 @@ let tr_fdef fdef =
   let num_params = List.length Aimp.(fdef.params) in
   let num_calls = ref 0 in
   let num_returns = ref 0 in
-  let num_pushs = ref 0 in
 
   (* Première tâche : allocation de registres, telle que définie dans le
      module Register_allocation *)
@@ -111,7 +110,7 @@ let tr_fdef fdef =
       @@ save vrd
 
     | Aimp.Push vr ->
-      incr num_pushs; load1 vr @@ Instr(Push (op1 vr))
+      load1 vr @@ Instr(Push (op1 vr))
 
     | Aimp.Pop n ->
       Instr(Pop n)
@@ -147,7 +146,7 @@ let tr_fdef fdef =
       Instr(SysCall)
 
     | Aimp.TailCall(f, n) ->
-      Instr(TailCall(f, n))
+      incr num_calls; Instr(TailCall(f, n))
 
   and tr_seq = function
     | Aimp.Seq(s1, s2) -> Seq(tr_seq s1, tr_seq s2)
@@ -164,8 +163,7 @@ let tr_fdef fdef =
     locals = num_stacked;
     temps = num_temps;
     calls = !num_calls;
-    returns = num_returns;
-    pushs = !num_pushs;
+    returns = !num_returns;
     code = tr_seq Aimp.(fdef.code);
   }
 

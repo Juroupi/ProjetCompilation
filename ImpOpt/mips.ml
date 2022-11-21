@@ -145,9 +145,9 @@ let pop n = if n > 0 then addi sp sp (4*n) else nop (* réduire la taille de la 
 
 let push r = store r 0 @@ reserve 1 (* ajouter un registre en haut de la pile *)
 
-let local_shift i = if i < 0 then (-i*4) else (-i*4-8)
-let write_local r i = sw r (local_shift i) fp
-let read_local r i = lw r (local_shift i) fp
+let local_shift calls i = if i < 0 then (-i*4) else (-i*4-(if calls > 0 then 8 else 0))
+let write_local calls r i = sw r (local_shift calls i) (if calls > 0 then fp else sp)
+let read_local calls r i = lw r (local_shift calls i) (if calls > 0 then fp else sp)
 
 let map_live_out f live_out =
   let rec map_live_out n = function
@@ -169,13 +169,21 @@ let saved_list n = List.init n (fun i -> s i)
 let push_saved n = push_list (saved_list n)
 let pop_saved n = pop_list (saved_list n)
 
-let init_fun locals saved =
-  store fp 0 @@ store ra 1 @@ move fp sp @@ reserve (locals+2) @@ push_saved saved
-let end_fun params locals saved =
-  pop_saved saved @@ pop (locals+2) @@ restore fp 0 @@ restore ra 1 @@ pop params
+let init_fun locals saved calls =
+  if calls > 0 then
+    store fp 0 @@ store ra 1 @@ move fp sp @@ reserve (locals+2) @@ push_saved saved
+  else
+    reserve locals
+
+let end_fun params locals saved calls =
+  if calls > 0 then
+    pop_saved saved @@ pop (locals+2) @@ restore fp 0 @@ restore ra 1 @@ pop params
+  else
+    pop locals @@ pop params
+
 let return = jr ra
 
-let tailcall fname src_params src_locals src_saved dst_params =
+let tailcall fname src_params src_locals src_saved src_calls dst_params =
   let frame = src_params + 2 + src_locals + src_saved in
   let rec move_params n =
     if n = 0 then 
@@ -186,7 +194,7 @@ let tailcall fname src_params src_locals src_saved dst_params =
       @@ push t0
   in
   pop dst_params
-  @@ end_fun src_params src_locals src_saved
+  @@ end_fun src_params src_locals src_saved src_calls
   @@ move_params dst_params
   @@ j fname
 
