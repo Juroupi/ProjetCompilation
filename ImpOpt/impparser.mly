@@ -9,13 +9,14 @@
 %token PLUS MINUS STAR SLASH PRCT
 %token LSL LSR EQ NEQ LT LE GT GE
 %token AND OR NOT
+%token INCR DECR
 
 %token <int> CST
 %token <bool> BOOL
 %token <string> IDENT
 %token VAR FUNCTION COMMA
 %token LPAR RPAR BEGIN END (* LBRACKET RBRACKET *) SEMI
-%token SET IF ELSE WHILE RETURN SYSCALL
+%token SET IF ELSE WHILE FOR RETURN SYSCALL
 %token EOF
 
 %left AND OR
@@ -55,7 +56,7 @@ function_def:
 ;
 
 variables_decl:
-| VAR l=variable_init_list SEMI { l }
+| VAR l=variable_init_list { l }
 ;
 
 variable_init_list:
@@ -71,9 +72,20 @@ instruction_list:
 | { [], [] }
 | i=instruction l=instruction_list { fst i @ fst l, snd i @ snd l }
 
-instruction:
+for_incr_instruction:
+| id=IDENT SET e=expression { [], [Set(id, e)] }
+| id=IDENT INCR { [], [Set(id, Binop(Add, Var id, Cst 1))] }
+| id=IDENT DECR { [], [Set(id, Binop(Sub, Var id, Cst 1))] }
+| e=expression { [], [Expr(e)] }
+;
+
+for_init_instruction:
 | locals=variables_decl { fst locals, snd locals }
-| id=IDENT SET e=expression SEMI { [], [Set(id, e)] }
+| i=for_incr_instruction { i }
+;
+
+instruction:
+| i=for_init_instruction SEMI { i }
 | IF LPAR c=expression RPAR
     BEGIN s1=instruction_list END
     ELSE BEGIN s2=instruction_list END { fst s1 @ fst s2, [If(c, snd s1, snd s2)] }
@@ -84,10 +96,13 @@ instruction:
     BEGIN s1=instruction_list END { fst s1, [If(c, snd s1, [])] }
 | WHILE LPAR c=expression RPAR
     BEGIN s=instruction_list END { fst s, [While(c, snd s)] }
+(*| FOR LPAR init=for_init_instruction SEMI cond=expression SEMI incr=instruction RPAR
+    BEGIN s=instruction_list END { fst init @ fst incr @ fst s, snd init @ [While(cond, snd s @ snd incr)] }*)
+| FOR LPAR init=for_init_instruction SEMI cond=expression SEMI incr=for_incr_instruction RPAR
+    BEGIN s=instruction_list END { fst init @ fst incr @ fst s, snd init @ [While(cond, snd s @ snd incr)] }
 | RETURN e=expression_except_call SEMI { [], [Return(e)] }
 | RETURN SEMI { [], [Return(Cst(0))] }
 | RETURN f=IDENT LPAR params=separated_list(COMMA, expression) RPAR SEMI { [], [TailCall(f, params)] }
-| e=expression SEMI { [], [Expr(e)] }
 ;
 
 expression_except_call:

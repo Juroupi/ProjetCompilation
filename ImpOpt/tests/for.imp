@@ -1,0 +1,6 @@
+function main(arg) {
+    for (var i = 0; i < arg; i++) {
+        putchar('a');
+        var j = 'b';
+    }
+}

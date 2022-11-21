@@ -9,6 +9,7 @@
         "if",       IF;
         "else",     ELSE;
         "while",    WHILE;
+        "for",      FOR;
         "true",     BOOL true;
         "false",    BOOL false;
         "var",      VAR;
@@ -46,6 +47,10 @@ rule token = parse
       { SEMI }
   | "="
       { SET }
+  | "++"
+      { INCR }
+  | "--"
+      { DECR }
   | "+"
       { PLUS }
   | "-"
