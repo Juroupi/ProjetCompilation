@@ -25,6 +25,7 @@
         | 'n' -> '\n'
         | 'r' -> '\r'
         | 't' -> '\t'
+        | '0' -> Char.chr 0
         | c -> c
 }
 
@@ -52,6 +53,8 @@ rule token = parse
       { keyword_or_ident id }
   | ";"
       { SEMI }
+  | ":"
+      { COLON }
   | "="
       { SET }
   | "++"
@@ -94,6 +97,10 @@ rule token = parse
       { LPAR }
   | ")"
       { RPAR }
+  | "["
+      { LBRACK }
+  | "]"
+      { RBRACK }
   | "{"
       { BEGIN }
   | "}"

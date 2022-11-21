@@ -13,3 +13,23 @@ function print_int(i) {
 function read_int() {
     return syscall(5);
 }
+
+function malloc(n) {
+    return syscall(9, n);
+}
+
+function smalloc(n, s) {
+    return syscall(9, n*s);
+}
+
+function print_string(s) {
+    syscall(4, s);
+}
+
+function strlen(s) {
+    var i = 0;
+    while (s[i:1] != '\0') {
+        i++;
+    }
+    return i;
+}

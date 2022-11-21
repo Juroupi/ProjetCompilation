@@ -80,7 +80,7 @@ let tr_fdef fdef =
     in find_param x params 0
   in
 
-  let mem_access x =
+  let var_access x =
     match find_param x fdef.params with
     | None -> Global x
     | Some i -> Stack (-i - 1)
@@ -92,13 +92,23 @@ let tr_fdef fdef =
      par un emplacement de pile. *)
   let rec tr_instr id = function
 
-    | Aimp.Read(vrd, x) ->
-      Instr(Read(dst vrd, mem_access x))
+    | Aimp.Get(vrd, x) ->
+      Instr(Read(dst vrd, var_access x))
       @@ save vrd
 
-    | Aimp.Write(x, vr) ->
+    | Aimp.Read(vrd, a, n, s) ->
+      load1 a
+      @@ Instr(Read(dst vrd, Array(op1 a, n, s)))
+      @@ save vrd
+
+    | Aimp.Set(x, vr) ->
       load1 vr
-      @@ Instr(Write(mem_access x, op1 vr))
+      @@ Instr(Write(var_access x, op1 vr))
+
+    | Aimp.Write(a, n, s, vr) ->
+      load1 a
+      @@ load2 vr
+      @@ Instr(Write(Array(op1 a, n, s), op2 vr))
 
     | Aimp.Move(vrd, vr) when same_reg vrd vr ->
       Nop

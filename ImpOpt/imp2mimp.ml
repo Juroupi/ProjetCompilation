@@ -10,6 +10,7 @@
  *)
 
 open Mimp
+open Ops
 
 (* L'appel [mk_add e1 e2] doit renvoyer une expression équivalente à la
    construction [Binop(Add, e1, e2)]. La fonction [mk_add] peut simplifier
@@ -45,26 +46,49 @@ let rec nbits i =
 let mk_mul e1 e2 = match e1, e2 with
   | Cst 1, e | e, Cst 1 -> e
   | Cst n1, Cst n2 -> Cst (n1 * n2)
-  | Cst n, e when pow_of_2 n -> Binop(Lsl, e, Cst (nbits n))
-  | e, Cst n when pow_of_2 n -> Binop(Lsl, e, Cst (nbits n))
+  | Cst n, e when pow_of_2 n -> Unop(Lsli (nbits n), e)
+  | e, Cst n when pow_of_2 n -> Unop(Lsli (nbits n), e)
   | _, _ -> Binop(Mul, e1, e2)
 
 let mk_lt e1 e2 = match e1, e2 with
   | Cst n1, Cst n2 -> Bool (n1 < n2)
   | _, _ -> Binop(Lt, e1, e2)
 
+let mk_lsl e1 e2 = match e1, e2 with
+  | Cst n1, Cst n2 -> Cst (n1 lsl n2)
+  | e, Cst n -> Unop(Lsli n, e)
+  | _, _ -> Binop(Lsl, e1, e2)
+
+let mk_lsr e1 e2 = match e1, e2 with
+  | Cst n1, Cst n2 -> Cst (n1 lsr n2)
+  | e, Cst n -> Unop(Lsri n, e)
+  | _, _ -> Binop(Lsr, e1, e2)
+
+let mk_deref n s = function
+  | Unop(Addi i, e) -> Unop(Deref(n + i, s), e)
+  | e -> Unop(Deref(n, s), e)
+
 (* faire d'autres optimisations pour les autres opérateurs *)
+
+let mk_binop = function
+  | Add -> mk_add
+  | Mul -> mk_mul
+  | Lt -> mk_lt
+  | Lsl -> mk_lsl
+  | Lsr -> mk_lsr
+  | op -> (fun e1 e2 -> Binop(op, e1, e2))
+
+let mk_unop = function
+  | Deref(n, s) -> mk_deref n s
+  | op -> (fun e -> Unop(op, e))
 
 (* Traduction directe, avec appel de "smart constructors" *)
 let rec tr_expr = function
   | Imp.Cst n -> Cst n
   | Imp.Bool b -> Cst (if b then 1 else 0)
   | Imp.Var x -> Var x
-  | Imp.Unop(op, e) -> Unop(op, tr_expr e)
-  | Imp.Binop(Add, e1, e2) -> mk_add (tr_expr e1) (tr_expr e2)
-  | Imp.Binop(Mul, e1, e2) -> mk_mul (tr_expr e1) (tr_expr e2)
-  | Imp.Binop(Lt, e1, e2) -> mk_lt (tr_expr e1) (tr_expr e2)
-  | Imp.Binop(op, e1, e2) -> Binop(op, tr_expr e1, tr_expr e2)
+  | Imp.Unop(op, e) -> mk_unop op (tr_expr e)
+  | Imp.Binop(op, e1, e2) -> mk_binop op (tr_expr e1) (tr_expr e2)
   | Imp.Call(f, args) -> Call(f, List.map tr_expr args)
   | Imp.SysCall(code, args) -> SysCall(tr_expr code, List.map tr_expr args)
 
@@ -76,6 +100,11 @@ let rec tr_instr = function
   | Imp.Return e -> Return(tr_expr e)
   | Imp.Expr e -> Expr(tr_expr e)
   | Imp.TailCall(f, args) -> TailCall(f, List.map tr_expr args)
+  | Imp.Write(array, n, s, v) ->
+    begin match tr_expr array with
+    | Unop(Addi i, array) -> Write(array, n + i, s, tr_expr v)
+    | array -> Write(array, n, s, tr_expr v)
+    end
 and tr_seq s =
   List.map tr_instr s
 

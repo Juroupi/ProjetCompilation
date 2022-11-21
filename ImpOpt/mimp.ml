@@ -25,6 +25,7 @@ type instruction =
   | Return   of expression
   | Expr     of expression
   | TailCall of string * expression list
+  | Write    of expression * int * int * expression
 and sequence = instruction list
 
 type function_def = {
@@ -55,9 +56,7 @@ let rec pp_expr = function
   | Cst n -> string_of_int n
   | Bool b -> if b then "true" else "false"
   | Var x -> x
-  | Unop(Addi n, e) -> sprintf "(%s + %i)" (pp_expr e) n
-  | Unop(Minus, e) -> sprintf "(-%s)" (pp_expr e)
-  | Unop(Not, e) -> sprintf "(!%s)" (pp_expr e)
+  | Unop(op, e) -> pp_unop (pp_expr e) op
   | Binop(op, e1, e2) -> 
      sprintf "(%s %s %s)" (pp_expr e1) (pp_binop op) (pp_expr e2)
   | Call(f, args) ->
@@ -93,6 +92,8 @@ let pp_program prog out_channel =
        print "%s;" (pp_expr e)
     | TailCall(f, args) ->
        print "return %s(%s);" f (pp_args args)
+    | Write(array, index, size, v) ->
+       print "%s[%d:%d] = %s;" (pp_expr array) index size (pp_expr v)
   and pp_seq = function
     | [] -> ()
     | i::seq -> print_margin(); pp_instr i; print "\n"; pp_seq seq

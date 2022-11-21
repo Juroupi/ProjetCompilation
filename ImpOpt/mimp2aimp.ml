@@ -58,7 +58,11 @@ let tr_fdef fdef =
 				x, Nop
 			else
 				let r = new_vreg() in
-				r, Nop ++ (Read (r, x))
+				r, Nop ++ (Get (r, x))
+		| Mimp.Unop(Deref(n, s), e) ->
+			let r1, s1 = tr_expr e in
+			let r = new_vreg() in
+			r, s1 ++ Read(r, r1, n, s)
 		| Mimp.Unop(op, e) ->
 			let r1, s1 = tr_expr e in
 			let r = new_vreg() in
@@ -106,7 +110,11 @@ let tr_fdef fdef =
 			if List.mem x Mimp.(fdef.locals) then
 				s ++ (Move (x, r))
 			else	
-				s ++ (Write (x, r))
+				s ++ (Set (x, r))
+		| Mimp.Write(e1, n, s, e2) ->
+			let r1, s1 = tr_expr e1 in
+			let r2, s2 = tr_expr e2 in
+			s1 @@ s2 ++ (Write (r1, n, s, r2))
 		| Mimp.If(e, s1, s2) ->
 			let r, s = tr_expr e in
 			s ++ (If (r, tr_seq s1, tr_seq s2))	  

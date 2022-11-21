@@ -62,37 +62,45 @@ let tr_fdef prog fdef =
 
   let num_returns = ref fdef.returns in
 
-  (* Traduction d'un opérateur binaire *)
+  (* Traduction d'un opérateur *)
   let tr_binop = function
     | Add -> add | Sub -> sub | Mul -> mul | Div -> div | Rem -> rem
-    | Lsl -> sll | Lsr -> srl
     | Eq -> seq | Neq -> sne | Lt -> slt | Le -> sle | Gt -> sgt | Ge -> sge
-    | And -> and_ | Or -> or_
+    | And -> and_ | Or -> or_ | Lsl -> sllv | Lsr -> srlv
+  in
+
+  let tr_unop = function
+    | Addi n  -> (fun rd r -> addi rd r n)
+    | Minus   -> neg
+    | Not     -> not_
+    | Lsli n  -> (fun rd r -> sll rd r n)
+    | Lsri n  -> (fun rd r -> srl rd r n)
+    | Deref _ -> failwith "Deref interdit dans eimp"
   in
 
   (* Traduction des instructions : relativement direct, sauf pour les 
      branchements et les boucles *)
   let rec tr_instr last = function
-    | Read(rd, Global x)    -> lv rd x
-    | Read(rd, Stack i)     -> read_local fdef.calls rd i
-    | Write(Global x, r)    -> sv r x
-    | Write(Stack i, r)     -> write_local fdef.calls r i
-    | Move(rd, r)           -> move rd r
-    | Push r                -> push r
-    | Pop n                 -> pop n
-    | Cst(rd, n)            -> li rd n
-    | Unop(rd, Addi n, r)   -> addi rd r n
-    | Unop(rd, Minus, r)    -> neg rd r
-    | Unop(rd, Not, r)      -> not_ rd r
-    | Binop(rd, op, r1, r2) -> (tr_binop op) rd r1 r2
-    | Call(f, n, live_out)  ->
+    | Read(rd, Global x)       -> lvar rd x
+    | Read(rd, Stack i)        -> read_local fdef.calls rd i
+    | Read(rd, Array(a, n, s)) -> larr s rd n a
+    | Write(Global x, r)       -> svar r x
+    | Write(Stack i, r)        -> write_local fdef.calls r i
+    | Write(Array(a, n, s), r) -> sarr s r n a
+    | Move(rd, r)              -> move rd r
+    | Push r                   -> push r
+    | Pop n                    -> pop n
+    | Cst(rd, n)               -> li rd n
+    | Unop(rd, op, r)      -> (tr_unop op) rd r
+    | Binop(rd, op, r1, r2)    -> (tr_binop op) rd r1 r2
+    | Call(f, n, live_out)     ->
       assert_call f n; save_live_out live_out @@ jal f @@ restore_live_out live_out
-    | If(r, s1, Nop)         -> tr_if last r s1
-    | If(r, s1, s2)         -> tr_if_else last r s1 s2
-    | While(s1, r, s2)      -> tr_while last s1 r s2
-    | Return                -> if last then (Printf.printf "last call in %s\n" fdef.name; decr num_returns; nop) else b return_label
-    | SysCall               -> syscall
-    | TailCall(f, n)        ->
+    | If(r, s1, Nop)           -> tr_if last r s1
+    | If(r, s1, s2)            -> tr_if_else last r s1 s2
+    | While(s1, r, s2)         -> tr_while last s1 r s2
+    | Return                   -> if last then (decr num_returns; nop) else b return_label
+    | SysCall                  -> syscall
+    | TailCall(f, n)           ->
       assert_call f n; tailcall f fdef.params fdef.locals fdef.temps fdef.calls n
 
   and tr_if_else last r s1 s2 =

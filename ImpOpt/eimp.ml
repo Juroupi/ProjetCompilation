@@ -11,6 +11,7 @@ type reg   = string
 type mem_access =
   | Global of string
   | Stack  of int
+  | Array  of reg * int * int
 
 type instruction =
   | Read    of reg * mem_access
@@ -60,8 +61,9 @@ type program = {
 open Printf
 
 let pp_mem_access = function
-  | Global x -> sprintf "%s" x
-  | Stack i  -> sprintf "{%i}" i
+  | Global x       -> sprintf "*%s" x
+  | Stack i        -> sprintf "*{%i}" i
+  | Array(a, n, s) -> sprintf "%s[%d:%d]" a n s
 
 let pp_program prog out_channel =
   let print s = fprintf out_channel s in
@@ -70,19 +72,15 @@ let pp_program prog out_channel =
 
   let rec pp_instr = function
     | Read(vrd, a) ->
-       print "%s <- *%s;" vrd (pp_mem_access a)
+       print "%s <- %s;" vrd (pp_mem_access a)
     | Write(a, vr) ->
-       print "*%s <- %s;" (pp_mem_access a) vr
+       print "%s <- %s;" (pp_mem_access a) vr
     | Move(vrd, vr) ->
        print "%s <- %s;" vrd vr
     | Cst(vrd, n) ->
        print "%s <- %i;" vrd n
-    | Unop(vrd, Addi n, vr) ->
-       print "%s <- %s + %i;" vrd vr n
-    | Unop(vrd, Minus, vr) ->
-       print "%s <- -%s;" vrd vr
-    | Unop(vrd, Not, vr) ->
-       print "%s <- !%s;" vrd vr
+    | Unop(vrd, op, vr) ->
+       print "%s <- %s;" vrd (pp_unop vr op)
     | Binop(vrd, op, vr1, vr2) -> 
        print "%s <- %s %s %s;" vrd vr1 (pp_binop op) vr2
     | Call(f, n, _) ->

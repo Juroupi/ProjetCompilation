@@ -15,7 +15,7 @@
 %token <bool> BOOL
 %token <string> IDENT
 %token VAR FUNCTION COMMA
-%token LPAR RPAR BEGIN END (* LBRACKET RBRACKET *) SEMI
+%token LPAR RPAR BEGIN END LBRACK RBRACK SEMI COLON
 %token SET IF ELSE WHILE FOR RETURN SYSCALL
 %token EOF
 
@@ -25,7 +25,7 @@
 %left STAR SLASH PRCT
 %left LSL LSR
 %nonassoc NOT
-(* %nonassoc LBRACKET *)
+%nonassoc LBRACK
 
 %start program
 %type <Imp.program> program
@@ -77,6 +77,11 @@ for_incr_instruction:
 | id=IDENT INCR { [], [Set(id, Binop(Add, Var id, Cst 1))] }
 | id=IDENT DECR { [], [Set(id, Binop(Sub, Var id, Cst 1))] }
 | e=expression { [], [Expr(e)] }
+| STAR ptr=expression SET e=expression { [], [Write(ptr, 0, 4, e)] }
+| array=expression LBRACK index=expression RBRACK SET e=expression
+    { [], [Write(Binop(Add, array, index), 0, 4, e)] }
+| array=expression LBRACK index=expression COLON s=CST RBRACK SET e=expression
+    { [], [Write(Binop(Add, array, Binop(Mul, index, Cst s)), 0, s, e)] }
 ;
 
 for_init_instruction:
@@ -96,8 +101,6 @@ instruction:
     BEGIN s1=instruction_list END { fst s1, [If(c, snd s1, [])] }
 | WHILE LPAR c=expression RPAR
     BEGIN s=instruction_list END { fst s, [While(c, snd s)] }
-(*| FOR LPAR init=for_init_instruction SEMI cond=expression SEMI incr=instruction RPAR
-    BEGIN s=instruction_list END { fst init @ fst incr @ fst s, snd init @ [While(cond, snd s @ snd incr)] }*)
 | FOR LPAR init=for_init_instruction SEMI cond=expression SEMI incr=for_incr_instruction RPAR
     BEGIN s=instruction_list END { fst init @ fst incr @ fst s, snd init @ [While(cond, snd s @ snd incr)] }
 | RETURN e=expression_except_call SEMI { [], [Return(e)] }
@@ -110,6 +113,9 @@ expression_except_call:
 | b=BOOL { Bool(b) }
 | id=IDENT { Var(id) }
 | LPAR e=expression RPAR { e }
+| STAR ptr=expression { Unop(Deref(0, 4), ptr) }
+| array=expression LBRACK index=expression RBRACK { Unop(Deref(0, 4), Binop(Add, array, index)) }
+| array=expression LBRACK index=expression COLON s=CST RBRACK { Unop(Deref(0, s), Binop(Add, array, Binop(Mul, index, Cst s))) }
 | op=unop e=expression { Unop(op, e) }
 | e1=expression op=binop e2=expression { Binop(op, e1, e2) }
 | SYSCALL LPAR params=separated_nonempty_list(COMMA, expression) RPAR { SysCall(List.hd params, List.tl params) }

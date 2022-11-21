@@ -82,8 +82,10 @@ let or_  r1 r2 r3 = ins "or %s, %s, %s"   r1 r2 r3
 let not_ r1 r2    = ins "not %s, %s"      r1 r2
 let neg  r1 r2    = ins "neg %s, %s"      r1 r2
 
-let sll  r1 r2 r3 = ins "sll %s, %s, %s"  r1 r2 r3
-let srl  r1 r2 r3 = ins "srl %s, %s, %s"  r1 r2 r3
+let sll  r1 r2 n  = ins "sll %s, %s, %d"   r1 r2 n
+let srl  r1 r2 n  = ins "srl %s, %s, %d"   r1 r2 n
+let sllv r1 r2 r3 = ins "sllv %s, %s, %s"  r1 r2 r3
+let srlv r1 r2 r3 = ins "srlv %s, %s, %s"  r1 r2 r3
   
 let seq  r1 r2 r3 = ins "seq %s, %s, %s"  r1 r2 r3
 let sne  r1 r2 r3 = ins "sne %s, %s, %s"  r1 r2 r3
@@ -122,8 +124,22 @@ let la   x (a : label) = ins "la %s, %s" x a
 let lbu  x i r = ins "lbu %s, %i(%s)"  x i r
 let lw   x i r = ins "lw %s, %i(%s)"   x i r
 let sw   x i r = ins "sw %s, %i(%s)"   x i r
-let lv   x (v : label) = ins "lw %s, %s" x v
-let sv   x (v : label) = ins "sw %s, %s" x v
+let lb   x i r = ins "lb %s, %i(%s)"   x i r
+let sb   x i r = ins "sb %s, %i(%s)"   x i r
+let lh   x i r = ins "lh %s, %i(%s)"   x i r
+let sh   x i r = ins "sh %s, %i(%s)"   x i r
+let lvar x (v : label) = ins "lw %s, %s" x v
+let svar x (v : label) = ins "sw %s, %s" x v
+
+let larr s =
+  match s with
+  | 1 -> lb | 2 -> lh | 4 -> lw
+  | _ -> failwith "taille de donnee non supportee"
+  
+let sarr s =
+  match s with
+  | 1 -> sb | 2 -> sh | 4 -> sw
+  | _ -> failwith "taille de donnee non supportee"
   
 let move r1 r2 = ins "move %s, %s"     r1 r2
   

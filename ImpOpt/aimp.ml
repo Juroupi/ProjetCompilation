@@ -26,9 +26,11 @@ type vreg = string
 type instruction =
   | SysCall
   (* Lecture de la valeur d'une variable ou d'un paramètre *)
-  | Read    of vreg * string
+  | Get     of vreg * string
+  | Read    of vreg * vreg * int * int
   (* Mutation d'une variable *)
-  | Write   of string * vreg
+  | Set     of string * vreg
+  | Write   of vreg * int * int * vreg
   (* Transfert entre deux registres virtuels *)
   | Move    of vreg * vreg
   (* Chargement d'une valeur constante *)
@@ -117,20 +119,20 @@ let pp_program prog out_channel =
 
   let pp_function fdef =
     let rec pp_instr = function
-      | Read(vrd, x) ->
+      | Get(vrd, x) ->
          print "%s <- *%s;" vrd x
-      | Write(x, vr) ->
+      | Read(vrd, array, index, size) ->
+         print "%s = (%s)[%d:%d];" vrd array index size
+      | Set(x, vr) ->
          print "*%s <- %s;" x vr
+      | Write(array, index, size, vr) ->
+         print "(%s)[%d:%d] = %s;" array index size vr
       | Move(vrd, vr) ->
          print "%s <- %s;" vrd vr
       | Cst(vrd, n) ->
          print "%s <- %i;" vrd n
-      | Unop(vrd, Addi n, vr) ->
-         print "%s <- %s + %i;" vrd vr n
-      | Unop(vrd, Not, vr) ->
-         print "%s <- !%s;" vrd vr
-      | Unop(vrd, Minus, vr) ->
-         print "%s <- -%s;" vrd vr
+      | Unop(vrd, op, vr) ->
+         print "%s <- %s;" vrd (pp_unop vr op)
       | Binop(vrd, op, vr1, vr2) -> 
          print "%s <- %s %s %s;" vrd vr1 (pp_binop op) vr2
       | Call(f, n) ->

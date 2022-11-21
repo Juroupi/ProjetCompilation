@@ -111,17 +111,19 @@ let liveness fdef =
      et des boucles, met à jour la table [liveness] pour toutes les 
      sous-instructions de [i]. *)
   and instr (i: instruction) (out: VSet.t): VSet.t = match i with
-    | Write(_, r) ->
+    | Set(_, r) ->
        (* Écriture dans une variable globale : le registre virtuel [r] est lu,
           et aucun registre n'est modifié. On ne fait donc qu'ajouter [r] aux
           registres vivants. *)
        VSet.add r out
-    | Read(rd, _) | Cst(rd, _) -> 
+    | Write(a, _, _, r) ->
+      VSet.add r (VSet.add a out)
+    | Get(rd, _) | Cst(rd, _) -> 
        (* Lecture d'une variable globale, ou chargement d'une constante :
           aucun registre virtuel n'est lu, et un registre [rd] de destination
           est modifié. Le registre [rd] n'est donc pas vivant en entrée. *)
        VSet.remove rd out
-    | Move(rd, r) | Unop(rd, _, r) -> 
+    | Move(rd, r) | Unop(rd, _, r) | Read(rd, r, _, _) -> 
        (* Le registre [r] est lu, le registre [rd] est modifié. *)
        VSet.add r (VSet.remove rd out)
     | Binop(rd, _, r1, r2) -> 
@@ -286,7 +288,7 @@ let interference_graph fdef live_out =
       interférences trouvées dans l'instruction [i], de numéro [n].
    *)
   and instr n i g = match i with
-    | Read(rd, _) | Cst(rd, _) | Unop(rd, _, _) | Binop(rd, _, _, _) ->
+    | Get(rd, _) | Read(rd, _, _, _) | Cst(rd, _) | Unop(rd, _, _) | Binop(rd, _, _, _) ->
        (* Dans chacun de ces cas l'instruction écrit uniquement dans le
           registre [rd]. On ajoute à g une arête entre rd et chaque
           (autre) registre virtuel vivant en sortie. *)
@@ -310,7 +312,7 @@ let interference_graph fdef live_out =
         "$a0"; "$a1"; "$a2"; "$a3";
         "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"; "$t8"; "$t9";
       ]
-    | Write _ | Return | Push _ | Pop _ | SysCall ->
+    | Set _ | Write _ | Return | Push _ | Pop _ | SysCall ->
       g
   in
 

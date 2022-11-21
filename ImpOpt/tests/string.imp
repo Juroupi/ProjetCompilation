@@ -1,0 +1,12 @@
+function main() {
+    var s = malloc(6);
+    s[0:1] = 's';
+    s[1:1] = 'a';
+    s[2:1] = 'l';
+    s[3:1] = 'u';
+    s[4:1] = 't';
+    s[5:1] = '\0';
+    print_string(s);
+    putchar('\n');
+    print_int(strlen(s));
+}

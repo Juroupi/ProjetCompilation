@@ -43,7 +43,9 @@ type instruction =
      par exemple un appel de fonction *)
   | Expr    of expression
   (* Fin d'une fonction + appel d'une autre fonction *)
-  | TailCall  of string * expression list
+  | TailCall of string * expression list
+  (* Ecriture en memoire *)
+  | Write   of expression * int * int * expression
 (* Séquence d'instructions *)
 and sequence = instruction list
 
@@ -113,6 +115,9 @@ and instr_used_functions prog used = function
     expr_used_functions prog used e
   | TailCall(f, args) ->
     expr_used_functions prog used (Call(f, args))
+  | Write(array, _, _, v) ->
+    let used = expr_used_functions prog used array in
+    expr_used_functions prog used v
 
 and seq_used_functions prog used seq =
   List.fold_left (instr_used_functions prog) used seq
@@ -310,6 +315,7 @@ let exec_prog prog arg =
          d'affichage). *)
       | Expr e -> ignore (eval_expr e)
       | TailCall(f, args) -> raise (EReturn(eval_expr (Call(f, args))))
+      | _ -> failwith "not implemented"
     in
 
     (* Code principal de l'interprétation d'un appel de fonction.
@@ -345,9 +351,7 @@ let rec pp_expr = function
   | Cst n -> string_of_int n
   | Bool b -> if b then "true" else "false"
   | Var x -> x
-  | Unop(Minus, e) -> sprintf "(-%s)" (pp_expr e)
-  | Unop(Addi n, e) -> sprintf "(%s + %i)" (pp_expr e) n
-  | Unop(Not, e) -> sprintf "(!%s)" (pp_expr e)
+  | Unop(op, e) -> pp_unop (pp_expr e) op
   | Binop(op, e1, e2) -> 
      sprintf "(%s%s%s)" (pp_expr e1) (pp_binop op) (pp_expr e2)
   | Call(f, args) ->
@@ -383,6 +387,8 @@ let pp_program prog out_channel =
        print "%s;" (pp_expr e)
     | TailCall(f, args) ->
        print "return %s(%s);" f (pp_args args)
+    | Write(array, index, size, v) ->
+       print "(%s)[%d:%d] = %s;" (pp_expr array) index size (pp_expr v)
   and pp_seq = function
     | [] -> ()
     | i::seq -> print_margin(); pp_instr i; print "\n"; pp_seq seq
