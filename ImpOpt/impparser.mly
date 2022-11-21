@@ -31,9 +31,13 @@
 
 %%
 
+global_decl:
+| VAR ids=separated_nonempty_list(COMMA, IDENT) SEMI { ids }
+;
+
 program:
-| globals=list(variable_decl) functions=list(function_def) EOF
-    { {functions; globals} }
+| globals=list(global_decl) functions=list(function_def) EOF
+    { {functions; globals = List.concat globals} }
 | error { let pos = $startpos in
           let message =
             Printf.sprintf
@@ -43,32 +47,47 @@ program:
           failwith message }
 ;
 
-variable_decl:
-| VAR id=IDENT SEMI { id }
+function_def:
+| FUNCTION name=IDENT LPAR params=separated_list(COMMA, IDENT) RPAR BEGIN 
+    code=instruction_list
+  END
+  { { name; code = snd code; params; locals = fst code } }
 ;
 
-function_def:
-| FUNCTION name=IDENT LPAR params=separated_list(COMMA, IDENT) RPAR
-    BEGIN locals=list(variable_decl) code=list(instruction) END
-    { {name; code; params; locals} }
+variables_decl:
+| VAR l=variable_init_list SEMI { l }
 ;
+
+variable_init_list:
+| v=variable_init { fst v, snd v }
+| v=variable_init COMMA l=variable_init_list { fst v @ fst l, snd v @ snd l }
+
+variable_init:
+| id=IDENT SET e=expression { [id], [Set(id, e)] }
+| id=IDENT { [id], [] }
+;
+
+instruction_list:
+| { [], [] }
+| i=instruction l=instruction_list { fst i @ fst l, snd i @ snd l }
 
 instruction:
-| id=IDENT SET e=expression SEMI { Set(id, e) }
+| locals=variables_decl { fst locals, snd locals }
+| id=IDENT SET e=expression SEMI { [], [Set(id, e)] }
 | IF LPAR c=expression RPAR
-    BEGIN s1=list(instruction) END
-    ELSE BEGIN s2=list(instruction) END { If(c, s1, s2) }
+    BEGIN s1=instruction_list END
+    ELSE BEGIN s2=instruction_list END { fst s1 @ fst s2, [If(c, snd s1, snd s2)] }
 | IF LPAR c=expression RPAR
-    BEGIN s1=list(instruction) END
-    ELSE s2=instruction { If(c, s1, [s2]) }
+    BEGIN s1=instruction_list END
+    ELSE s2=instruction { fst s1 @ fst s2, [If(c, snd s1, snd s2)] }
 | IF LPAR c=expression RPAR
-    BEGIN s1=list(instruction) END { If(c, s1, []) }
+    BEGIN s1=instruction_list END { fst s1, [If(c, snd s1, [])] }
 | WHILE LPAR c=expression RPAR
-    BEGIN s=list(instruction) END { While(c, s) }
-| RETURN e=expression_except_call SEMI { Return(e) }
-| RETURN SEMI { Return(Cst(0)) }
-| RETURN f=IDENT LPAR params=separated_list(COMMA, expression) RPAR SEMI { TailCall(f, params) }
-| e=expression SEMI { Expr(e) }
+    BEGIN s=instruction_list END { fst s, [While(c, snd s)] }
+| RETURN e=expression_except_call SEMI { [], [Return(e)] }
+| RETURN SEMI { [], [Return(Cst(0))] }
+| RETURN f=IDENT LPAR params=separated_list(COMMA, expression) RPAR SEMI { [], [TailCall(f, params)] }
+| e=expression SEMI { [], [Expr(e)] }
 ;
 
 expression_except_call:

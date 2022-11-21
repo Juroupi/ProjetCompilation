@@ -1,4 +1,3 @@
-- initialisation des variables dans leur déclaration
 - caractères échapés
 - tableaux
 - pointeurs de fonction

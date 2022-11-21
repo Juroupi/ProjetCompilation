@@ -25,13 +25,6 @@ type expression =
      liste de paramètres *)
   | Call  of string * expression list
   | SysCall of expression * expression list
-(**
-   Exemple d'expression :
-     (1 + x) * f(3, true)
- *)
-let e = Binop(Mul,
-              Binop(Add, Cst 1, Var "x"),
-              Call("f", [Cst 3; Bool true]))
 
 (**
    Structure de données pour représenter les instructions,
@@ -53,17 +46,6 @@ type instruction =
   | TailCall  of string * expression list
 (* Séquence d'instructions *)
 and sequence = instruction list
-(**
-   Exemple d'instruction :
-     while (c < 58) {
-       putchar(c);
-       c = c+1;
-     }
- *)
-let i = While(Binop(Lt, Var "c", Cst 58),
-              [ Expr(SysCall(Cst 11, [ Var "c" ]));
-                Set("c", Binop(Add, Var "x", Cst 1)) ]
-          )
 
 (** 
    Structure de données pour représenter une fonction 
@@ -77,23 +59,6 @@ type function_def = {
     locals: string list;
     (* Les instructions *)
     code: sequence;
-  }
-(**
-   Exemple de fonction :
-     function chiffres(depart) {
-       var c;
-       c = depart + 48;
-       while (c < 58) {
-         putchar(c);
-         c = c+1;
-       }
-     }
- *)
-let f = {
-    name = "chiffres";
-    params = ["depart"];
-    locals = ["c"];
-    code = [ Set("c", Binop(Add, Var "depart", Cst 48)); i ]
   }
 
 (**
@@ -109,7 +74,9 @@ type program = {
 let include_lib lib prog =
   { globals = lib.globals @ prog.globals; functions = lib.functions @ prog.functions }
 
-(* Récupération de la liste des fonctions utilisées *)
+(**
+  Récupération de la liste des fonctions utilisées
+ *)
 
 module FMap = Map.Make(String)
 
@@ -157,34 +124,6 @@ and prog_used_functions prog =
   let main = find_fdef prog "main" in
   let used = FMap.singleton "main" main in
   FMap.fold (fun _ fdef l -> fdef :: l) (fdef_used_functions prog used main) []
-
-(**
-   Exemple de programme :
-     var zero;
-
-     function main() {
-       zero = 0;
-       chiffres(zero);
-     }
-
-     function chiffres(depart) {
-       var c;
-       c = depart + 48;
-       while (c < 58) {
-         putchar(c);
-         c = c+1;
-       }
-     }
- *)
-let p = {
-    globals = ["zero"];
-    functions = [ f;
-                  { name = "main";
-                    params = [];
-                    locals = [];
-                    code = [ Set("zero", Cst 0);
-                             Expr(Call("chiffres", [Var "zero"])) ] } ]
-  }
 
 
 (**
