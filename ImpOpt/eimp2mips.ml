@@ -87,41 +87,47 @@ let tr_fdef prog fdef =
     | Binop(rd, op, r1, r2) -> (tr_binop op) rd r1 r2
     | Call(f, n, live_out)  ->
       assert_call f n; save_live_out live_out @@ jal f @@ restore_live_out live_out
-    | If(r, s1, s2)         -> tr_if r s1 s2
-    | While(s1, r, s2)      -> tr_while s1 r s2
-    | Return                -> if last then (decr num_returns; nop) else b return_label
+    | If(r, s1, Nop)         -> tr_if last r s1
+    | If(r, s1, s2)         -> tr_if_else last r s1 s2
+    | While(s1, r, s2)      -> tr_while last s1 r s2
+    | Return                -> if last then (Printf.printf "last call in %s\n" fdef.name; decr num_returns; nop) else b return_label
     | SysCall               -> syscall
     | TailCall(f, n)        ->
       assert_call f n; tailcall f fdef.params fdef.locals fdef.temps fdef.calls n
 
-  and tr_if r s1 s2 =
+  and tr_if_else last r s1 s2 =
     let labels = new_labels [| "if"; "else"; "end_if" |] in
     comment ("\t" ^ labels.(0) ^ ":")
     @@ beqz r labels.(1)
-      @@ tr_seq s1
+      @@ tr_seq false s1
       @@ b labels.(2)
     @@ label labels.(1)
-      @@ tr_seq s2 
+      @@ tr_seq last s2
     @@ label labels.(2)
   
-  and tr_while s1 r s2 =
+  and tr_if last r s =
+    let labels = new_labels [| "if"; "end_if" |] in
+    comment ("\t" ^ labels.(0) ^ ":")
+    @@ beqz r labels.(1)
+      @@ tr_seq false s
+    @@ label labels.(1)
+  
+  and tr_while last s1 r s2 =
     let labels = new_labels [| "while"; "end_while" |] in
     label labels.(0)
-    @@ tr_seq s1
+    @@ tr_seq false s1
     @@ beqz r labels.(1)
-      @@ tr_seq s2
+      @@ tr_seq last s2
       @@ b labels.(0)
     @@ label labels.(1)
 
-  and tr_seq (s: Eimp.sequence) =
-    let rec tr_seq last (s: Eimp.sequence) =
-      match s with
-      | Nop          -> nop
-      | Instr i      -> tr_instr last i
-      | Seq(s1, Nop) -> tr_seq last s1
-      | Seq(Nop, s2) -> tr_seq last s2
-      | Seq(s1, s2)  -> tr_seq false s1 @@ tr_seq last s2
-    in tr_seq true s
+  and tr_seq last (s: Eimp.sequence) =
+    match s with
+    | Nop          -> nop
+    | Instr i      -> tr_instr last i
+    | Seq(s1, Nop) -> tr_seq last s1
+    | Seq(Nop, s2) -> tr_seq last s2
+    | Seq(s1, s2)  -> tr_seq false s1 @@ tr_seq last s2
   in
 
   (* Code de la fonction. Il faut prévoir notamment ici, dans l'ordre
@@ -131,7 +137,7 @@ let tr_fdef prog fdef =
      - la convention d'appel, phase "fin d'appel",
      - rendre la main.
    *)
-  let code_seq = tr_seq fdef.code in
+  let code_seq = tr_seq true fdef.code in
 
   comment "\tsauvegarde des registres et allocation d'espace dans la pile"
   @@ init_fun fdef.locals fdef.temps fdef.calls

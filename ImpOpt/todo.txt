@@ -1,8 +1,6 @@
-- supprimer l'enregistrement de $ra et $s dans la pile s'il n'y a pas d'appel de fonction
 - initialisation des variables dans leur déclaration
 - caractères échapés
 - tableaux
-- mips inline
 - pointeurs de fonction
 - instruction $zero
 - chaines de caracteres
