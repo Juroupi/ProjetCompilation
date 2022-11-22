@@ -3,15 +3,15 @@ function main() {
     var a = malloc(4*4);
 
     var i = 2, j = 3;
-    a[0] = 0;         // a[0]  = 0
-    *(a + 4) = 1;     // a[4]  = 1
-    a[i * 4] = 2;     // a[8]  = 2
-    *(a + j * 4) = 3; // a[12] = 3
+    a[0] = 0;         // a[0] = 0
+    *(a + 4) = 1;     // a[1] = 1
+    a[i] = 2;         // a[2] = 2
+    *(a + j * 4) = 3; // a[3] = 3
 
     print_int(a[0]);
-    print_int(a[4]);
-    print_int(a[8]);
-    print_int(a[12]);
+    print_int(a[1]);
+    print_int(a[2]);
+    print_int(a[3]);
     putchar('\n');
 
     print_int(*(a + 0));
@@ -21,7 +21,7 @@ function main() {
     putchar('\n');
 
     for (var i = 0; i < 4; i++) {
-        print_int(a[i*4]);
+        print_int(a[i]);
     }
     putchar('\n');
 
