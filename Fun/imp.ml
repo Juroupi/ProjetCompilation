@@ -1,4 +1,5 @@
 type expression =
+  | Void
   | Cst   of int
   | Bool  of bool
   | Var   of string

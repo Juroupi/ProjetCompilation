@@ -44,6 +44,7 @@ let rec pp_expression i lp rp =
     sprintf "%s(%s)" (pp_expression f "(" ")") (pp_args args)
   | Sbrk(e) ->
     sprintf "sbrk(%s)" (pp_expression e "" "")
+  | Void -> ""
       
 and pp_args: expression list -> string = function
   | [] -> ""
@@ -60,6 +61,15 @@ let pp_program prog out_channel =
       print "putchar(%s);" (pp_expression e "" "")
     | Set(x, e) ->
       print "%s = %s;" x (pp_expression e "" "")
+    | If(c, s1, []) ->
+      print "if (%s) {\n" (pp_expression c "" "");
+      incr margin; pp_seq s1; decr margin;
+      print_margin(); print "}";
+    | If(c, s1, [If(c2, s2, s3)]) ->
+      print "if (%s) {\n" (pp_expression c "" "");
+      incr margin; pp_seq s1; decr margin;
+      print_margin(); print "} else ";
+      pp_instruction (If(c2, s2, s3))
     | If(c, s1, s2) ->
       print "if (%s) {\n" (pp_expression c "" "");
       incr margin; pp_seq s1; decr margin;
