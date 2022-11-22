@@ -91,7 +91,7 @@ let tr_fdef prog fdef =
     | Push r                   -> push r
     | Pop n                    -> pop n
     | Cst(rd, n)               -> li rd n
-    | Str(rd, name)            -> la rd name
+    | Addr(rd, id)             -> la rd id
     | Unop(rd, op, r)      -> (tr_unop op) rd r
     | Binop(rd, op, r1, r2)    -> (tr_binop op) rd r1 r2
     | Call(f, n, live_out)     ->

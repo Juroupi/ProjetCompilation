@@ -67,7 +67,7 @@ let tr_fdef strings fdef =
 		| Mimp.Str str ->
 			let r = new_vreg() in
 			let name = new_str_name str in
-			r, Nop ++ Str(r, name)
+			r, Nop ++ Addr(r, name)
 		| Mimp.Var x ->
 			(* Il faut distinguer ici entre variables locales, paramètres et
 				variables globales. *)
@@ -104,6 +104,9 @@ let tr_fdef strings fdef =
 			let r, s = tr_expr code in
 			let res = new_vreg () in
 			res, s ++ (Move("$v0", r)) @@ (tr_syscall_args args) ++ SysCall ++ (Move(res, "$v0"))
+		| Mimp.Addr(id) ->
+			let r = new_vreg() in
+			r, Nop ++ Addr(r, id)
 	
 	and tr_syscall_args args =
 		let rec tr_syscall_args i args = match i, args with

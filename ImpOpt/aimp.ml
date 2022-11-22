@@ -35,8 +35,8 @@ type instruction =
   | Move    of vreg * vreg
   (* Chargement d'une valeur constante *)
   | Cst     of vreg * int
-  (* Chargement d'une chaine de caractères *)
-  | Str     of vreg * string
+  (* Chargement d'une adresse *)
+  | Addr    of vreg * string
   (* Opérations arithmétiques *)
   | Unop    of vreg * unop * vreg
   | Binop   of vreg * binop * vreg * vreg
@@ -134,8 +134,8 @@ let pp_program prog out_channel =
          print "%s <- %s;" vrd vr
       | Cst(vrd, n) ->
          print "%s <- %i;" vrd n
-      | Str(vrd, name) ->
-         print "%s <- &%s;" vrd name
+      | Addr(vrd, id) ->
+         print "%s <- &%s;" vrd id
       | Unop(vrd, op, vr) ->
          print "%s <- %s;" vrd (pp_unop vr op)
       | Binop(vrd, op, vr1, vr2) -> 

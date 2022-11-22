@@ -35,7 +35,7 @@
 %token <string> STR
 %token <string> IDENT
 %token VAR FUNCTION COMMA
-%token LPAR RPAR BEGIN END LBRACK RBRACK SEMI COLON
+%token LPAR RPAR BEGIN END LBRACK RBRACK SEMI COLON AMPERSAND
 %token SET IF ELSE WHILE FOR RETURN SYSCALL
 %token EOF
 
@@ -143,6 +143,7 @@ expression_except_call:
 | id=IDENT { Var(id) }
 | LPAR e=expression RPAR { e }
 | STAR ptr=expression { Unop(Deref(0, 4), ptr) }
+| AMPERSAND id=IDENT { Addr(id) }
 | array=expression LBRACK index=expression RBRACK { Unop(Deref(0, 4), Binop(Add, array, index)) }
 | array=expression LBRACK index=expression COLON s=CST RBRACK { Unop(Deref(0, s), Binop(Add, array, Binop(Mul, index, Cst s))) }
 | op=unop e=expression { Unop(op, e) }

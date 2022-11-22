@@ -20,7 +20,7 @@ type instruction =
   | Push    of reg
   | Pop     of int
   | Cst     of reg * int
-  | Str     of reg * string
+  | Addr    of reg * string
   | Unop    of reg * unop * reg
   | Binop   of reg * binop * reg * reg
   | Call    of string * int * reg list
@@ -81,8 +81,8 @@ let pp_program prog out_channel =
        print "%s <- %s;" vrd vr
     | Cst(vrd, n) ->
        print "%s <- %i;" vrd n
-    | Str(vrd, name) ->
-       print "%s <- &%s;" vrd name
+    | Addr(vrd, id) ->
+       print "%s <- &%s;" vrd id
     | Unop(vrd, op, vr) ->
        print "%s <- %s;" vrd (pp_unop vr op)
     | Binop(vrd, op, vr1, vr2) -> 

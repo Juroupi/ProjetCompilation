@@ -10,14 +10,15 @@
 open Ops
 
 type expression =
-  | Cst   of int
-  | Bool  of bool
-  | Str   of string
-  | Var   of string
-  | Unop  of unop * expression
-  | Binop of binop * expression * expression
-  | Call  of string * expression list
+  | Cst     of int
+  | Bool    of bool
+  | Str     of string
+  | Var     of string
+  | Unop    of unop * expression
+  | Binop   of binop * expression * expression
+  | Call    of string * expression list
   | SysCall of expression * expression list
+  | Addr    of string
 
 type instruction =
   | Set      of string * expression
@@ -65,6 +66,8 @@ let rec pp_expr = function
      sprintf "%s(%s)" f (pp_args args)
   | SysCall(code, args) ->
      sprintf "syscall(%s)(%s)" (pp_expr code) (pp_args args)
+  | Addr(id) ->
+     sprintf "(&%s)" id
 and pp_args = function
   | [] -> ""
   | [a] -> pp_expr a

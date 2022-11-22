@@ -91,6 +91,8 @@ rule token = parse
       { GE }
   | "&&"
       { AND }
+  | "&"
+      { AMPERSAND }
   | "||"
       { OR }
   | "!"

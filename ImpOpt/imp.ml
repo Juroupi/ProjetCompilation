@@ -26,7 +26,10 @@ type expression =
   (* Appel de fonction, avec un identifiant de fonction et une 
      liste de paramètres *)
   | Call    of string * expression list
+  (* Appel système *)
   | SysCall of expression * expression list
+  (* Adresse d'une fonction *)
+  | Addr    of string
 
 (**
    Structure de données pour représenter les instructions,
@@ -128,6 +131,8 @@ and expr_used_functions prog used = function
     List.fold_left (expr_used_functions prog) used (code :: args)
   | Call(f, args) ->
     List.fold_left (expr_used_functions prog) (add_used_function prog used f) args
+  | Addr(id) ->
+    add_used_function prog used id
   | _ -> used
 
 and instr_used_functions prog used = function
@@ -387,6 +392,8 @@ let rec pp_expr = function
      sprintf "%s(%s)" f (pp_args args)
   | SysCall(code, args) ->
      sprintf "syscall(%s)" (pp_args args)
+  | Addr(id) ->
+    sprintf "(&%s)" id
 and pp_args = function
   | [] -> ""
   | [a] -> pp_expr a

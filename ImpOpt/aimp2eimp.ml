@@ -129,8 +129,8 @@ let tr_fdef fdef =
       Instr(Cst(dst vrd, n))
       @@ save vrd
 
-    | Aimp.Str(vrd, name) ->
-      Instr(Str(dst vrd, name))
+    | Aimp.Addr(vrd, id) ->
+      Instr(Addr(dst vrd, id))
       @@ save vrd
 
     | Aimp.Unop(vrd, op, vr) ->
