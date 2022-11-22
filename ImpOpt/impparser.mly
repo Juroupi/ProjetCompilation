@@ -52,13 +52,13 @@
 
 %%
 
-global_decl:
-| VAR ids=separated_nonempty_list(COMMA, IDENT) SEMI { ids }
-;
-
 program:
-| globals=list(global_decl) functions=list(function_def) EOF
-    { {functions; globals = List.concat globals} }
+| EOF
+    { { globals = []; functions = []; globals_init = [] } }
+| v=variables_decl SEMI p=program
+    { { globals = v.locals @ p.globals; functions = p.functions; globals_init = v.code @ p.globals_init } }
+| f=function_def p=program
+    { { globals = p.globals; functions = f :: p.functions; globals_init = p.globals_init } }
 
 | error { let pos = $startpos in
           let message =

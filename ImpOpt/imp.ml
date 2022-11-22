@@ -73,10 +73,35 @@ type program = {
     globals: string list;
     (* Ensemble des fonctions *)
     functions: function_def list;
+    (* Initialisation des varaibles globales *)
+    globals_init: sequence;
   }
 
-let include_lib lib prog =
-  { globals = lib.globals @ prog.globals; functions = lib.functions @ prog.functions }
+let include_lib lib prog = {
+  globals = lib.globals @ prog.globals; 
+  functions = lib.functions @ prog.functions;
+  globals_init = lib.globals_init @ prog.globals_init
+}
+
+let globals_init name code = {
+  name = name;
+  params = [];
+  locals = [];
+  code = code
+}
+
+let add_globals_init_fun name prog = {
+  globals = prog.globals;
+  functions = (globals_init name prog.globals_init) :: prog.functions;
+  globals_init = [];
+}
+
+let add_globals_init_call name main = {
+  name = main.name;
+  params = main.params;
+  locals = main.locals;
+  code = Expr(Call(name, [])) :: main.code;
+}
 
 (**
   Récupération de la liste des fonctions utilisées
@@ -128,7 +153,8 @@ and fdef_used_functions prog used fdef =
   seq_used_functions prog used fdef.code
 
 and prog_used_functions prog =
-  let main = find_fdef prog "main" in
+  let main = add_globals_init_call "_globals_init" (find_fdef prog "main") in
+  let prog = add_globals_init_fun "_globals_init" prog in
   let used = FMap.singleton "main" main in
   FMap.fold (fun _ fdef l -> fdef :: l) (fdef_used_functions prog used main) []
 

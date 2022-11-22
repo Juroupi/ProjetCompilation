@@ -1,5 +1,4 @@
 function main() {
-    init_malloc();
     var a = malloc(20);
     var b = malloc(30);
     var c = malloc(40);

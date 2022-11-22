@@ -1,0 +1,10 @@
+function print_coucou() {
+    print_string(x);
+    print_string(y);
+}
+
+var x = "couc", y = "ou";
+
+function main() {
+    print_coucou();
+}

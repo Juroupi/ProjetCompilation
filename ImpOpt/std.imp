@@ -1,5 +1,3 @@
-var malloc_start;
-
 function putchar(c) {
     syscall(11, c);
 }
@@ -38,11 +36,14 @@ function strlen(s) {
 ////////////////////      malloc      ////////////////////
 //////////////////////////////////////////////////////////
 
-function init_malloc() {
-    malloc_start = syscall(9, 3*4);
-    malloc_start[0:4] = 0;     // pas de précédent
-    malloc_start[1:4] = false; // pas utilisé
-    malloc_start[2:4] = 0;     // pas de suivant
+var malloc_start = init_malloc_start();
+
+function init_malloc_start() {
+    var mem = syscall(9, 3*4);
+    mem[0:4] = 0;     // pas de précédent
+    mem[1:4] = false; // pas utilisé
+    mem[2:4] = 0;     // pas de suivant
+    return mem;
 }
 
 function print_memory_block(mem) {
