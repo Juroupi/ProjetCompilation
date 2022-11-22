@@ -17,6 +17,7 @@ type expression =
   | Unop    of unop * expression
   | Binop   of binop * expression * expression
   | Call    of string * expression list
+  | PCall   of expression * expression list
   | SysCall of expression * expression list
   | Addr    of string
 
@@ -64,6 +65,8 @@ let rec pp_expr = function
      sprintf "(%s %s %s)" (pp_expr e1) (pp_binop op) (pp_expr e2)
   | Call(f, args) ->
      sprintf "%s(%s)" f (pp_args args)
+  | PCall(e, args) ->
+     sprintf "(%s)(%s)" (pp_expr e) (pp_args args)
   | SysCall(code, args) ->
      sprintf "syscall(%s)(%s)" (pp_expr code) (pp_args args)
   | Addr(id) ->

@@ -100,6 +100,16 @@ let tr_fdef strings fdef =
 				else
 					Nop ++ (Call (f, 0))
 			in res, s ++ (Move(res, "$v0"))
+		| Mimp.PCall(e, args) ->
+			let nargs = List.length args in
+			let res = new_vreg() in
+			let rptr, sptr = tr_expr e in
+			let sargs = 
+				if nargs > 0 then 
+					(tr_args args) ++ (PCall (rptr, nargs))
+				else
+					Nop ++ (PCall (rptr, 0))
+			in res, sptr @@ sargs ++ (Move(res, "$v0"))
 		| Mimp.SysCall(code, args) ->
 			let r, s = tr_expr code in
 			let res = new_vreg () in

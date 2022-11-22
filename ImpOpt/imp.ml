@@ -26,6 +26,8 @@ type expression =
   (* Appel de fonction, avec un identifiant de fonction et une 
      liste de paramètres *)
   | Call    of string * expression list
+  (* Appel de fonction par adresse *)
+  | PCall   of expression * expression list
   (* Appel système *)
   | SysCall of expression * expression list
   (* Adresse d'une fonction *)
@@ -127,8 +129,8 @@ and expr_used_functions prog used = function
     expr_used_functions prog (expr_used_functions prog used e1) e2
   | Unop(op, e) ->
     expr_used_functions prog used e
-  | SysCall(code, args) ->
-    List.fold_left (expr_used_functions prog) used (code :: args)
+  | SysCall(e, args) | PCall(e, args) ->
+    List.fold_left (expr_used_functions prog) used (e :: args)
   | Call(f, args) ->
     List.fold_left (expr_used_functions prog) (add_used_function prog used f) args
   | Addr(id) ->
@@ -390,6 +392,8 @@ let rec pp_expr = function
      sprintf "(%s%s%s)" (pp_expr e1) (pp_binop op) (pp_expr e2)
   | Call(f, args) ->
      sprintf "%s(%s)" f (pp_args args)
+  | PCall(e, args) ->
+     sprintf "(%s)(%s)" (pp_expr e) (pp_args args)
   | SysCall(code, args) ->
      sprintf "syscall(%s)" (pp_args args)
   | Addr(id) ->

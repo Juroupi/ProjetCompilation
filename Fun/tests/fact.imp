@@ -1,0 +1,18 @@
+var fact_1;
+
+function fun_fact_0(param_n, closure) {
+  var ifres_0;
+
+  if (param_n <= 1) {
+    ifres_0 = 1;
+  } else {
+    ifres_0 = param_n * (*closure[0])(param_n - 1, closure);
+  }
+  return ifres_0;
+}
+
+main {
+  fact_1 = malloc(1 * 4);
+  fact_1[0] = &fun_fact_0;
+  print_int((*fact_1[0])(6, fact_1));
+}

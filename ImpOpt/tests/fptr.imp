@@ -1,7 +1,8 @@
-function test() {
-
+function test(str) {
+    print_string(str);
 }
 
 function main() {
     var a = &test;
+    (*a)("test");
 }

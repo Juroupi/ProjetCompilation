@@ -92,10 +92,12 @@ let tr_fdef prog fdef =
     | Pop n                    -> pop n
     | Cst(rd, n)               -> li rd n
     | Addr(rd, id)             -> la rd id
-    | Unop(rd, op, r)      -> (tr_unop op) rd r
+    | Unop(rd, op, r)          -> (tr_unop op) rd r
     | Binop(rd, op, r1, r2)    -> (tr_binop op) rd r1 r2
     | Call(f, n, live_out)     ->
       assert_call f n; save_live_out live_out @@ jal f @@ restore_live_out live_out
+    | PCall(r, n, live_out)    ->
+      save_live_out live_out @@ jalr r @@ restore_live_out live_out
     | If(r, s1, Nop)           -> tr_if last r s1
     | If(r, s1, s2)            -> tr_if_else last r s1 s2
     | While(s1, r, s2)         -> tr_while last s1 r s2

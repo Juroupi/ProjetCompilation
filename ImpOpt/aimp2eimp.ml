@@ -146,6 +146,11 @@ let tr_fdef fdef =
     | Aimp.Call(f, n) ->
       incr num_calls; Instr(Call(f, n, convert_call_live_out alloc live_out id))
 
+    | Aimp.PCall(vr, n) ->
+      incr num_calls;
+      load1 vr
+      @@ Instr(PCall(op1 vr, n, convert_call_live_out alloc live_out id))
+
     | Aimp.If(vr, s1, s2) ->
       load1 vr
       @@ Instr(If(op1 vr, tr_seq s1, tr_seq s2))

@@ -91,6 +91,7 @@ let rec tr_expr = function
   | Imp.Unop(op, e) -> mk_unop op (tr_expr e)
   | Imp.Binop(op, e1, e2) -> mk_binop op (tr_expr e1) (tr_expr e2)
   | Imp.Call(f, args) -> Call(f, List.map tr_expr args)
+  | Imp.PCall(e, args) -> PCall(tr_expr e, List.map tr_expr args)
   | Imp.SysCall(code, args) -> SysCall(tr_expr code, List.map tr_expr args)
   | Imp.Addr(id) -> Addr(id)
 

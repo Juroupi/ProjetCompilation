@@ -153,7 +153,12 @@ expression_except_call:
 
 expression:
 | e=expression_except_call { e }
-| f=IDENT LPAR params=separated_list(COMMA, expression) RPAR { Call(f, params) }
+| e=expression LPAR params=separated_list(COMMA, expression) RPAR {
+    match e with
+    | Var f -> Call(f, params)
+    | Unop(Deref(0, 4), e) -> PCall(e, params)
+    | _ -> failwith "syntax error : call with function pointer should use *" 
+}
 ;
 
 %inline unop:

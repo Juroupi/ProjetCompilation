@@ -24,6 +24,7 @@ type instruction =
   | Unop    of reg * unop * reg
   | Binop   of reg * binop * reg * reg
   | Call    of string * int * reg list
+  | PCall   of reg * int * reg list
   | If      of reg * sequence * sequence
   | While   of sequence * reg * sequence
   | Return
@@ -89,6 +90,8 @@ let pp_program prog out_channel =
        print "%s <- %s %s %s;" vrd vr1 (pp_binop op) vr2
     | Call(f, n, _) ->
        print "call %s (%i);" f n
+    | PCall(vr, n, _) ->
+       print "callr %s (%i);" vr n
     | Push vr ->
        print "push %s;" vr
     | Pop n ->

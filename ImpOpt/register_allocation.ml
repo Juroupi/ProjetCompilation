@@ -77,6 +77,21 @@ let liveness fdef =
      atomique est identifiée par un numéro unique, que l'on utilise ici
      comme clé dans la table. *)
   let (liveness: (int, VSet.t) Hashtbl.t) = Hashtbl.create 64 in
+
+  let call_modified = VSet.of_list [
+    "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"; "$t8"; "$t9";
+    "$a0"; "$a1"; "$a2"; "$a3";
+    "$v0"; "$v1"
+  ] in
+
+  (* let call_read n = VSet.of_list (List.init n (fun i -> Printf.sprintf "$a%d" i)) in *)
+  let call_read n =
+    VSet.of_list []
+  in
+
+  let return_read = 
+    VSet.of_list ["$v0"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"]
+  in
   
   (** Calcul de vivacité pour une séquence.
 
@@ -147,14 +162,9 @@ let liveness fdef =
           - les registres $ai
           - le registre $v0
         *)
-        let modified = VSet.of_list [
-          "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"; "$t8"; "$t9";
-          "$a0"; "$a1"; "$a2"; "$a3";
-          "$v0"; "$v1"
-        ] in
-        (* let read = VSet.of_list (List.init n (fun i -> Printf.sprintf "$a%d" i)) in *)
-        let read = VSet.of_list [] in
-        VSet.union read (VSet.diff out modified)
+        VSet.union (call_read n) (VSet.diff out call_modified)
+    | PCall(r, n) ->
+        VSet.add r (VSet.union (call_read n) (VSet.diff out call_modified))
     | Return ->
        (* Rappel de la convention : on renvoie la valeur contenue dans $v0.
           Ce registre est donc considéré comme lu.
@@ -164,18 +174,9 @@ let liveness fdef =
           Les registres callee-saved sont :
           - les registres $si
         *)
-        VSet.union out 
-          (VSet.of_list ["$v0"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"])
+        VSet.union out return_read
     | TailCall(_, n) ->
-        let modified = VSet.of_list [
-          "$t2"; "$t3"; "$t4"; "$t5"; "$t6"; "$t7"; "$t8"; "$t9";
-          "$a0"; "$a1"; "$a2"; "$a3";
-          "$v0"; "$v1"
-        ] in
-        let read = VSet.of_list [
-          "$v0"; "$v1"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"
-        ] in
-        VSet.union read (VSet.diff out modified)
+        VSet.union (VSet.union return_read (call_read n)) (VSet.diff out call_modified)
     | If(r, s1, s2) ->
        (* En sortie du test de la valeur de [r], les blocs [s1] et [s2]
           sont deux futurs possibles. Les variables vivantes dans ces deux
@@ -305,7 +306,7 @@ let interference_graph fdef live_out =
         else
           g'
       ) out (if rd <> rs then Graph.add_edge rd rs Preference g else g)
-    | Call(_, _) | TailCall(_, _) -> 
+    | Call _ | TailCall _ | PCall _ -> 
       (* Ecriture dans les registres $v, $a et $t *)
       add_edges g (Hashtbl.find live_out n) [
         "$v0"; "$v1";

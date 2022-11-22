@@ -47,6 +47,7 @@ type instruction =
      simplement le nombre de paramètre, qui pourra servir lors d'une
      étape ultérieure. *)
   | Call    of string * int
+  | PCall   of vreg * int
   (* Instructions supplémentaires pour réaliser les conventions d'appel :
      ajout d'un élément au sommet de la pile, et retrait de n éléments de
      la pile. *)
@@ -142,6 +143,8 @@ let pp_program prog out_channel =
          print "%s <- %s %s %s;" vrd vr1 (pp_binop op) vr2
       | Call(f, n) ->
          print "call %s (%i);" f n
+      | PCall(vr, n) ->
+         print "callr %s (%i);" vr n
       | SysCall ->
          print "syscall;"
       | Push vr ->
