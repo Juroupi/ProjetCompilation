@@ -1,0 +1,7 @@
+.vscode/
+_build/
+tests/*.aimp
+tests/*.asm
+tests/*.eimp
+tests/*.mimp
+tests/*.imp

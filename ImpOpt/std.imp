@@ -40,27 +40,27 @@ var malloc_start = init_malloc_start();
 
 function init_malloc_start() {
     var mem = syscall(9, 3*4);
-    mem[0:4] = 0;     // pas de précédent
-    mem[1:4] = false; // pas utilisé
-    mem[2:4] = 0;     // pas de suivant
+    mem[0] = 0;     // pas de précédent
+    mem[1] = false; // pas utilisé
+    mem[2] = 0;     // pas de suivant
     return mem;
 }
 
 function print_memory_block(mem) {
     print_string("{ prev: ");
-    print_int(mem[0:4]);
+    print_int(mem[0]);
     print_string(", used: ");
-    print_int(mem[1:4]);
+    print_int(mem[1]);
     print_string(", next: ");
-    print_int(mem[2:4]);
+    print_int(mem[2]);
     print_string(" }\n");
 }
 
 function print_memory_blocks() {
     var mem = malloc_start;
     print_memory_block(mem);
-    while (mem[2:4] != 0) {
-        mem = mem + mem[2:4];
+    while (mem[2] != 0) {
+        mem = mem + mem[2];
         print_memory_block(mem);
     }
 }
@@ -82,40 +82,40 @@ function malloc(n) {
     }
 
     // on cherche le premier bloc qui n'est pas utilisé et avec assez de place
-    while (mem[1:4] || (mem[2:4] > 0 && mem[2:4] < total)) {
-        mem = mem + mem[2:4];
+    while (mem[1] || (mem[2] > 0 && mem[2] < total)) {
+        mem = mem + mem[2];
     }
 
     // si on a atteint le dernier bloc
-    if (mem[2:4] == 0) {
+    if (mem[2] == 0) {
 
         // on initialise le bloc atteint
-        mem[1:4] = true;
-        mem[2:4] = total;
+        mem[1] = true;
+        mem[2] = total;
         syscall(9, total);
 
         // on ajoute un bloc vide à la fin
         var last = mem + total;
-        last[0:4] = -total;
-        last[1:4] = false;
-        last[2:4] = 0;
+        last[0] = -total;
+        last[1] = false;
+        last[2] = 0;
     }
 
     // si on a atteint un bloc non utilisé
     else {
 
         // on initialise le bloc atteint
-        mem[1:4] = true;
+        mem[1] = true;
 
         // s'il reste assez de place, on ajoute un bloc vide après
-        if (total + 3*4 + 4 < mem[2:4]) {
-            var next = mem + mem[2:4];
+        if (total + 3*4 + 4 < mem[2]) {
+            var next = mem + mem[2];
             var new_next = mem + total;
-            new_next[0:4] = -total;
-            new_next[1:4] = false;
-            new_next[2:4] = mem[2:4] - total;
-            next[0:4] = -new_next[2:4];
-            mem[2:4] = total;
+            new_next[0] = -total;
+            new_next[1] = false;
+            new_next[2] = mem[2] - total;
+            next[0] = -new_next[2];
+            mem[2] = total;
         }
     }
 
@@ -126,32 +126,32 @@ function free(mem) {
 
     mem = mem - 3*4;
     
-    if (mem[1:4]) {
+    if (mem[1]) {
 
-        mem[1:4] = false;
+        mem[1] = false;
         
-        var prev = mem + mem[0:4];
-        var next = mem + mem[2:4];
+        var prev = mem + mem[0];
+        var next = mem + mem[2];
 
         // si le bloc a un précédent et qu'il n'est pas utilisé
-        if (prev != mem && !prev[1:4]) {
-            prev[2:4] = prev[2:4] + mem[2:4];
+        if (prev != mem && !prev[1]) {
+            prev[2] = prev[2] + mem[2];
             if (next != mem) {
-                next[0:4] = -prev[2:4];
+                next[0] = -prev[2];
             }
             mem = prev;
         }
 
         // si le bloc a un suivant et qu'il n'est pas utilisé
-        if (next != mem && !next[1:4]) {
-            mem[2:4] = mem[2:4] + next[2:4];
-            var next_next = next + next[2:4];
+        if (next != mem && !next[1]) {
+            mem[2] = mem[2] + next[2];
+            var next_next = next + next[2];
             if (next_next != next) {
-                next_next[0:4] = -mem[2:4];
+                next_next[0] = -mem[2];
             }
             // else {
-            //     syscall(9, -mem[2:4]); // désallocation
-            //     mem[2:4] = 0;
+            //     syscall(9, -mem[2]); // désallocation
+            //     mem[2] = 0;
             // }
         }
     }

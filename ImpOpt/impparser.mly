@@ -74,6 +74,10 @@ function_def:
     content=instruction_list
   END
   { { name; code = content.code; params; locals = content.locals; } }
+| name=IDENT BEGIN 
+    content=instruction_list
+  END
+  { { name; code = content.code; params = []; locals = content.locals; } }
 ;
 
 variables_decl:
@@ -105,7 +109,7 @@ for_incr_instruction:
 | STAR ptr=expression SET e=expression
     { content [] [Write(ptr, 0, 4, e)] }
 | array=expression LBRACK index=expression RBRACK SET e=expression
-    { content [] [Write(Binop(Add, array, index), 0, 4, e)] }
+    { content [] [Write(Binop(Add, array, Binop(Mul, index, Cst 4)), 0, 4, e)] }
 | array=expression LBRACK index=expression COLON s=CST RBRACK SET e=expression
     { content [] [Write(Binop(Add, array, Binop(Mul, index, Cst s)), 0, s, e)] }
 ;
@@ -150,7 +154,7 @@ expression_except_call:
 | LPAR e=expression RPAR { e }
 | STAR ptr=expression { Unop(Deref(0, 4), ptr) }
 | AMPERSAND id=IDENT { Addr(id) }
-| array=expression LBRACK index=expression RBRACK { Unop(Deref(0, 4), Binop(Add, array, index)) }
+| array=expression LBRACK index=expression RBRACK { Unop(Deref(0, 4), Binop(Add, array, Binop(Mul, index, Cst 4))) }
 | array=expression LBRACK index=expression COLON s=CST RBRACK { Unop(Deref(0, s), Binop(Add, array, Binop(Mul, index, Cst s))) }
 | op=unop e=expression { Unop(op, e) }
 | e1=expression op=binop e2=expression { Binop(op, e1, e2) }

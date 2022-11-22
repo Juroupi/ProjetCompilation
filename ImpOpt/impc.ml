@@ -12,7 +12,8 @@ let () =
 
   (* Lecture et analyse syntaxique *)
   let file = Sys.argv.(1) in
-  let imp_prog = Imp.include_lib (parse_imp "std.imp") (parse_imp file) in
+  let stdfile = ((Filename.dirname Sys.argv.(0)) ^ "/std.imp") in
+  let imp_prog = Imp.include_lib (parse_imp stdfile) (parse_imp file) in
 
   (* Simplification et sélection d'instructions *)
   let mimp_prog = Imp2mimp.tr_program imp_prog in
