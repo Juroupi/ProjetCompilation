@@ -103,6 +103,7 @@ let rec tr_instr = function
   | Imp.Return e -> Return(tr_expr e)
   | Imp.Expr e -> Expr(tr_expr e)
   | Imp.TailCall(f, args) -> TailCall(f, List.map tr_expr args)
+  | Imp.TailPCall(e, args) -> TailPCall(tr_expr e, List.map tr_expr args)
   | Imp.Write(array, n, s, v) ->
     begin match tr_expr array with
     | Unop(Addi i, array) -> Write(array, n + i, s, tr_expr v)

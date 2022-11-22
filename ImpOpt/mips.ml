@@ -200,7 +200,7 @@ let end_fun params locals saved calls =
 
 let return = jr ra
 
-let tailcall fname src_params src_locals src_saved src_calls dst_params =
+let tailcall ji src_params src_locals src_saved src_calls dst_params =
   let frame = src_params + 2 + src_locals + src_saved in
   let rec move_params n =
     if n = 0 then 
@@ -213,7 +213,10 @@ let tailcall fname src_params src_locals src_saved src_calls dst_params =
   pop dst_params
   @@ end_fun src_params src_locals src_saved src_calls
   @@ move_params dst_params
-  @@ j fname
+  @@ ji
+
+let tailpcall r = tailcall (jr r)
+let tailcall fname = tailcall (j fname)
 
 type program = { text : [ `text ] asm;
                  data : [ `data ] asm; }

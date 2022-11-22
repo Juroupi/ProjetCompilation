@@ -167,6 +167,9 @@ let tr_fdef fdef =
     | Aimp.TailCall(f, n) ->
       incr num_calls; Instr(TailCall(f, n))
 
+    | Aimp.TailPCall(vr, n) ->
+      incr num_calls; load1 vr @@ Instr(TailPCall(op1 vr, n))
+
   and tr_seq = function
     | Aimp.Seq(s1, s2) -> Seq(tr_seq s1, tr_seq s2)
     | Aimp.Instr(n, i) -> tr_instr n i

@@ -105,6 +105,8 @@ let tr_fdef prog fdef =
     | SysCall                  -> syscall
     | TailCall(f, n)           ->
       assert_call f n; tailcall f fdef.params fdef.locals fdef.temps fdef.calls n
+    | TailPCall(r, n)          ->
+      tailpcall r fdef.params fdef.locals fdef.temps fdef.calls n
 
   and tr_if_else last r s1 s2 =
     let labels = new_labels [| "if"; "else"; "end_if" |] in

@@ -29,7 +29,8 @@ type instruction =
   | While   of sequence * reg * sequence
   | Return
   | SysCall
-  | TailCall of string * int
+  | TailCall  of string * int
+  | TailPCall of reg * int
 and sequence =
   | Seq     of sequence * sequence
   | Instr   of instruction
@@ -91,7 +92,7 @@ let pp_program prog out_channel =
     | Call(f, n, _) ->
        print "call %s (%i);" f n
     | PCall(vr, n, _) ->
-       print "callr %s (%i);" vr n
+       print "pcall %s (%i);" vr n
     | Push vr ->
        print "push %s;" vr
     | Pop n ->
@@ -116,6 +117,8 @@ let pp_program prog out_channel =
        print "syscall;"
     | TailCall(f, n) ->
        print "tailcall %s (%i);" f n
+    | TailPCall(r, n) ->
+       print "tailpcall %s (%i);" r n
   and pp_seq = function
     | Nop -> ()
     | Seq(s1, s2) -> pp_seq s1; pp_seq s2

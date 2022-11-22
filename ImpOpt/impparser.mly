@@ -132,8 +132,14 @@ instruction:
     { content [] [Return(e)] }
 | RETURN SEMI
     { content [] [Return(Cst(0))] }
-| RETURN f=IDENT LPAR params=separated_list(COMMA, expression) RPAR SEMI
+| RETURN f=IDENT LPAR params=separated_list(COMMA, expression) RPAR SEMI 
     { content [] [TailCall(f, params)] }
+| RETURN LPAR e=expression RPAR LPAR params=separated_list(COMMA, expression) RPAR SEMI
+    { content [] [
+        match e with
+        | Unop(Deref(0, 4), e) -> TailPCall(e, params)
+        | _ -> failwith "syntax error : call with function pointer should use *"
+    ] }
 ;
 
 expression_except_call:
@@ -153,12 +159,11 @@ expression_except_call:
 
 expression:
 | e=expression_except_call { e }
-| e=expression LPAR params=separated_list(COMMA, expression) RPAR {
-    match e with
-    | Var f -> Call(f, params)
-    | Unop(Deref(0, 4), e) -> PCall(e, params)
-    | _ -> failwith "syntax error : call with function pointer should use *" 
-}
+| f=IDENT LPAR params=separated_list(COMMA, expression) RPAR { Call(f, params) }
+| LPAR e=expression RPAR LPAR params=separated_list(COMMA, expression) RPAR
+    { match e with
+      | Unop(Deref(0, 4), e) -> PCall(e, params)
+      | _ -> failwith "syntax error : call with function pointer should use *" }
 ;
 
 %inline unop:

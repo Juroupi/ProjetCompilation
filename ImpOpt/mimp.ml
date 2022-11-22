@@ -28,6 +28,7 @@ type instruction =
   | Return   of expression
   | Expr     of expression
   | TailCall of string * expression list
+  | TailPCall of expression * expression list
   | Write    of expression * int * int * expression
 and sequence = instruction list
 
@@ -66,7 +67,7 @@ let rec pp_expr = function
   | Call(f, args) ->
      sprintf "%s(%s)" f (pp_args args)
   | PCall(e, args) ->
-     sprintf "(%s)(%s)" (pp_expr e) (pp_args args)
+     sprintf "(*%s)(%s)" (pp_expr e) (pp_args args)
   | SysCall(code, args) ->
      sprintf "syscall(%s)(%s)" (pp_expr code) (pp_args args)
   | Addr(id) ->
@@ -100,6 +101,8 @@ let pp_program prog out_channel =
        print "%s;" (pp_expr e)
     | TailCall(f, args) ->
        print "return %s(%s);" f (pp_args args)
+    | TailPCall(e, args) ->
+       print "return (*%s)(%s);" (pp_expr e) (pp_args args)
     | Write(array, index, size, v) ->
        print "%s[%d:%d] = %s;" (pp_expr array) index size (pp_expr v)
   and pp_seq = function

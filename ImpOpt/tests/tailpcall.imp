@@ -1,0 +1,17 @@
+function _fact(n, res) {
+    if (n <= 1) {
+        return res;
+    }
+    return (*(&_fact))(n - 1, n * res);
+}
+
+function fact(n) {
+    return _fact(n, 1);
+}
+
+function main(arg) {
+    print_string("fact(");
+    print_int(arg);
+    print_string(") = ");
+    print_int(fact(arg));
+}

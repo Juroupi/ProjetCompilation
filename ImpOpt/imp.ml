@@ -51,6 +51,8 @@ type instruction =
   | Expr    of expression
   (* Fin d'une fonction + appel d'une autre fonction *)
   | TailCall of string * expression list
+  (* Fin d'une fonction + appel d'une autre fonction par pointeur *)
+  | TailPCall of expression * expression list
   (* Ecriture en memoire *)
   | Write   of expression * int * int * expression
 (* Séquence d'instructions *)
@@ -149,6 +151,8 @@ and instr_used_functions prog used = function
     expr_used_functions prog used e
   | TailCall(f, args) ->
     expr_used_functions prog used (Call(f, args))
+  | TailPCall(e, args) ->
+    expr_used_functions prog used (PCall(e, args))
   | Write(array, _, _, v) ->
     let used = expr_used_functions prog used array in
     expr_used_functions prog used v
@@ -393,7 +397,7 @@ let rec pp_expr = function
   | Call(f, args) ->
      sprintf "%s(%s)" f (pp_args args)
   | PCall(e, args) ->
-     sprintf "(%s)(%s)" (pp_expr e) (pp_args args)
+     sprintf "(*%s)(%s)" (pp_expr e) (pp_args args)
   | SysCall(code, args) ->
      sprintf "syscall(%s)" (pp_args args)
   | Addr(id) ->
@@ -427,6 +431,8 @@ let pp_program prog out_channel =
        print "%s;" (pp_expr e)
     | TailCall(f, args) ->
        print "return %s(%s);" f (pp_args args)
+    | TailPCall(e, args) ->
+       print "return (*%s)(%s);" (pp_expr e) (pp_args args)
     | Write(array, index, size, v) ->
        print "(%s)[%d:%d] = %s;" (pp_expr array) index size (pp_expr v)
   and pp_seq = function

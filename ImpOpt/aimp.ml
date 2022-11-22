@@ -26,41 +26,42 @@ type vreg = string
 type instruction =
   | SysCall
   (* Lecture de la valeur d'une variable ou d'un paramètre *)
-  | Get     of vreg * string
-  | Read    of vreg * vreg * int * int
+  | Get       of vreg * string
+  | Read      of vreg * vreg * int * int
   (* Mutation d'une variable *)
-  | Set     of string * vreg
-  | Write   of vreg * int * int * vreg
+  | Set       of string * vreg
+  | Write     of vreg * int * int * vreg
   (* Transfert entre deux registres virtuels *)
-  | Move    of vreg * vreg
+  | Move      of vreg * vreg
   (* Chargement d'une valeur constante *)
-  | Cst     of vreg * int
+  | Cst       of vreg * int
   (* Chargement d'une adresse *)
-  | Addr    of vreg * string
+  | Addr      of vreg * string
   (* Opérations arithmétiques *)
-  | Unop    of vreg * unop * vreg
-  | Binop   of vreg * binop * vreg * vreg
+  | Unop      of vreg * unop * vreg
+  | Binop     of vreg * binop * vreg * vreg
   (* Appel de fonction. On ne donne pas de registre virtuel pour le
      résultat car, par convention, le résultat doit être placé dans $v0.
      On ne donne pas non plus de paramètres car, par convention, ils doivent
      être passés par la pile et/ou des registres dédiés. On fournit
      simplement le nombre de paramètre, qui pourra servir lors d'une
      étape ultérieure. *)
-  | Call    of string * int
-  | PCall   of vreg * int
+  | Call      of string * int
+  | PCall     of vreg * int
   (* Instructions supplémentaires pour réaliser les conventions d'appel :
      ajout d'un élément au sommet de la pile, et retrait de n éléments de
      la pile. *)
-  | Push    of vreg
-  | Pop     of int
+  | Push      of vreg
+  | Pop       of int
   (* Fin d'exécution d'une fonction. La valeur renvoyée doit être placée
      dans $v0 avant d'exécuter cette instruction. *)
   | Return
-  | TailCall of string * int
+  | TailCall  of string * int
+  | TailPCall of vreg * int
   (* Les structures de contrôles sont toujours présentes.
      Attention, le test est fait sur un registre virtuel. *)
-  | If      of vreg * sequence * sequence
-  | While   of sequence * vreg * sequence
+  | If        of vreg * sequence * sequence
+  | While     of sequence * vreg * sequence
 (* Pour éviter un surcoût lié aux concaténations de code, on donne aux
    séquences d'instruction une structure arborescente. Pour les besoins
    de la suite, chaque instruction est numérotée. *)
@@ -144,7 +145,7 @@ let pp_program prog out_channel =
       | Call(f, n) ->
          print "call %s (%i);" f n
       | PCall(vr, n) ->
-         print "callr %s (%i);" vr n
+         print "pcall %s (%i);" vr n
       | SysCall ->
          print "syscall;"
       | Push vr ->
@@ -169,6 +170,8 @@ let pp_program prog out_channel =
          print "return;"
       | TailCall(f, n) ->
          print "tailcall %s (%i);" f n
+      | TailPCall(vr, n) ->
+         print "tailpcall %s (%i);" vr n
     and pp_seq = function
       | Nop -> ()
       | Seq(s1, s2) -> pp_seq s1; pp_seq s2

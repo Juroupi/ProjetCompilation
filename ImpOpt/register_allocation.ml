@@ -164,7 +164,7 @@ let liveness fdef =
         *)
         VSet.union (call_read n) (VSet.diff out call_modified)
     | PCall(r, n) ->
-        VSet.add r (VSet.union (call_read n) (VSet.diff out call_modified))
+        VSet.add r (instr (Call("", n)) out)
     | Return ->
        (* Rappel de la convention : on renvoie la valeur contenue dans $v0.
           Ce registre est donc considéré comme lu.
@@ -177,6 +177,8 @@ let liveness fdef =
         VSet.union out return_read
     | TailCall(_, n) ->
         VSet.union (VSet.union return_read (call_read n)) (VSet.diff out call_modified)
+    | TailPCall(r, n) ->
+        VSet.add r (instr (TailCall("", n)) out)
     | If(r, s1, s2) ->
        (* En sortie du test de la valeur de [r], les blocs [s1] et [s2]
           sont deux futurs possibles. Les variables vivantes dans ces deux
@@ -306,7 +308,7 @@ let interference_graph fdef live_out =
         else
           g'
       ) out (if rd <> rs then Graph.add_edge rd rs Preference g else g)
-    | Call _ | TailCall _ | PCall _ -> 
+    | Call _ | TailCall _ | PCall _ | TailPCall _ -> 
       (* Ecriture dans les registres $v, $a et $t *)
       add_edges g (Hashtbl.find live_out n) [
         "$v0"; "$v1";
@@ -556,7 +558,7 @@ let convert_vreg k r c =
   if c < k then
     Actual (find_areg_by_color c)
   else
-    Stacked c
+    Stacked (c - k)
 
 let convert_call_live_out allocation live_out id =
   let call_live_out = Hashtbl.find live_out id in

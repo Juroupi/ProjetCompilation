@@ -1,4 +1,3 @@
-- pointeurs de fonction
 - instruction $zero
 - faire plus de unop et de fonctions mk_binop/unop + changer l'incrementation en unop dans le parser
 - parametres de fonctions dans les registres
