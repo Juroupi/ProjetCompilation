@@ -48,7 +48,7 @@ let tr_fdef strings fdef =
 		match Hashtbl.find_opt strings str with
 		| Some name -> name
 		| None ->
-			let name = Printf.sprintf "_string_%i" !str_counter in
+			let name = Printf.sprintf "_string_%s_%i" fdef.name !str_counter in
 			Hashtbl.add strings name str;
 			incr str_counter;
 			name

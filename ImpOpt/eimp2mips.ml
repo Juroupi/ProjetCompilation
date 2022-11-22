@@ -72,7 +72,7 @@ let tr_fdef prog fdef =
   let tr_unop = function
     | Addi n  -> (fun rd r -> addi rd r n)
     | Minus   -> neg
-    | Not     -> not_
+    | Not     -> lnot
     | Lsli n  -> (fun rd r -> sll rd r n)
     | Lsri n  -> (fun rd r -> srl rd r n)
     | Deref _ -> failwith "Deref interdit dans eimp"

@@ -1,3 +1,5 @@
+var malloc_start;
+
 function putchar(c) {
     syscall(11, c);
 }
@@ -12,14 +14,6 @@ function print_int(i) {
 
 function read_int() {
     return syscall(5);
-}
-
-function malloc(n) {
-    return syscall(9, n);
-}
-
-function smalloc(n, s) {
-    return syscall(9, n*s);
 }
 
 function read_string(n) {
@@ -38,4 +32,126 @@ function strlen(s) {
         i++;
     }
     return i;
+}
+
+//////////////////////////////////////////////////////////
+////////////////////      malloc      ////////////////////
+//////////////////////////////////////////////////////////
+
+function init_malloc() {
+    malloc_start = syscall(9, 3*4);
+    malloc_start[0:4] = 0;     // pas de précédent
+    malloc_start[1:4] = false; // pas utilisé
+    malloc_start[2:4] = 0;     // pas de suivant
+}
+
+function print_memory_block(mem) {
+    print_string("{ prev: ");
+    print_int(mem[0:4]);
+    print_string(", used: ");
+    print_int(mem[1:4]);
+    print_string(", next: ");
+    print_int(mem[2:4]);
+    print_string(" }\n");
+}
+
+function print_memory_blocks() {
+    var mem = malloc_start;
+    print_memory_block(mem);
+    while (mem[2:4] != 0) {
+        mem = mem + mem[2:4];
+        print_memory_block(mem);
+    }
+}
+
+function malloc(n) {
+
+    // bloc: [précédent, utilisation, taille, suivant, données]
+
+    if (n <= 0) {
+        return 0;
+    }
+
+    var total = 3*4 + n;
+    var mem = malloc_start;
+
+    // alignement sur la taille des mots
+    if (total % 4 != 0) {
+        total = total + 4 - total % 4;
+    }
+
+    // on cherche le premier bloc qui n'est pas utilisé et avec assez de place
+    while (mem[1:4] || (mem[2:4] > 0 && mem[2:4] < total)) {
+        mem = mem + mem[2:4];
+    }
+
+    // si on a atteint le dernier bloc
+    if (mem[2:4] == 0) {
+
+        // on initialise le bloc atteint
+        mem[1:4] = true;
+        mem[2:4] = total;
+        syscall(9, total);
+
+        // on ajoute un bloc vide à la fin
+        var last = mem + total;
+        last[0:4] = -total;
+        last[1:4] = false;
+        last[2:4] = 0;
+    }
+
+    // si on a atteint un bloc non utilisé
+    else {
+
+        // on initialise le bloc atteint
+        mem[1:4] = true;
+
+        // s'il reste assez de place, on ajoute un bloc vide après
+        if (total + 3*4 + 4 < mem[2:4]) {
+            var next = mem + mem[2:4];
+            var new_next = mem + total;
+            new_next[0:4] = -total;
+            new_next[1:4] = false;
+            new_next[2:4] = mem[2:4] - total;
+            next[0:4] = -new_next[2:4];
+            mem[2:4] = total;
+        }
+    }
+
+    return mem + 3*4;
+}
+
+function free(mem) {
+
+    mem = mem - 3*4;
+    
+    if (mem[1:4]) {
+
+        mem[1:4] = false;
+        
+        var prev = mem + mem[0:4];
+        var next = mem + mem[2:4];
+
+        // si le bloc a un précédent et qu'il n'est pas utilisé
+        if (prev != mem && !prev[1:4]) {
+            prev[2:4] = prev[2:4] + mem[2:4];
+            if (next != mem) {
+                next[0:4] = -prev[2:4];
+            }
+            mem = prev;
+        }
+
+        // si le bloc a un suivant et qu'il n'est pas utilisé
+        if (next != mem && !next[1:4]) {
+            mem[2:4] = mem[2:4] + next[2:4];
+            var next_next = next + next[2:4];
+            if (next_next != next) {
+                next_next[0:4] = -mem[2:4];
+            }
+            // else {
+            //     syscall(9, -mem[2:4]); // désallocation
+            //     mem[2:4] = 0;
+            // }
+        }
+    }
 }

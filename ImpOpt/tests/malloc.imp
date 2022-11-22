@@ -1,0 +1,33 @@
+function main() {
+    init_malloc();
+    var a = malloc(20);
+    var b = malloc(30);
+    var c = malloc(40);
+    var d = malloc(50);
+    print_memory_blocks();
+    putchar('\n');
+    free(a);
+    print_memory_blocks();
+    putchar('\n');
+    free(c);
+    print_memory_blocks();
+    putchar('\n');
+    free(b);
+    print_memory_blocks();
+    putchar('\n');
+    free(d);
+    print_memory_blocks();
+    putchar('\n');
+    d = malloc(50);
+    print_memory_blocks();
+    putchar('\n');
+    c = malloc(10);
+    print_memory_blocks();
+    putchar('\n');
+    free(c);
+    print_memory_blocks();
+    putchar('\n');
+    free(d);
+    print_memory_blocks();
+    putchar('\n');
+}

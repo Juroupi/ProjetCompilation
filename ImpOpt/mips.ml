@@ -80,6 +80,7 @@ let rem  r1 r2 r3 = ins "rem %s, %s, %s"  r1 r2 r3
 let and_ r1 r2 r3 = ins "and %s, %s, %s"  r1 r2 r3
 let or_  r1 r2 r3 = ins "or %s, %s, %s"   r1 r2 r3
 let not_ r1 r2    = ins "not %s, %s"      r1 r2
+let lnot r1 r2    = ins "seq %s, %s, $zero" r1 r2
 let neg  r1 r2    = ins "neg %s, %s"      r1 r2
 
 let sll  r1 r2 n  = ins "sll %s, %s, %d"   r1 r2 n
