@@ -28,10 +28,25 @@ open Aimp
 (* Fonction principale, de traduction d'une définition de fonction *)
 let tr_fdef strings fdef =
 
+	let stacked_params =
+		match Mimp.(fdef.params) with
+		| _ :: _ :: _ :: _ :: params -> params
+		| _ -> []
+	in
+	let args_length args = max 0 (List.length args - 4) in
+
 	(* Liste des registres virtuels. Elle est initialisée avec les variables
 		locales et sera étendue à chaque création d'un nouveau registre
 		virtuel. *)
-	let vregs = ref Mimp.(fdef.locals) in
+	let arg i = Printf.sprintf "$a%i" i in
+	let varg i = Printf.sprintf "#a%i" i in
+
+	let nparams = List.length Mimp.(fdef.params) in
+	let nvargs = min 4 nparams in
+
+	let varg_regs = List.init nvargs varg in
+
+	let vregs = ref Mimp.(varg_regs @ fdef.locals) in
 	(* Fonction de génération de nouveaux registres virtuels.
 		Renvoie le nouveau nom, et étend la liste. *)
 	let vreg_counter = ref 0 in
@@ -40,6 +55,23 @@ let tr_fdef strings fdef =
 		vregs := name :: !vregs;
 		incr vreg_counter;
 		name
+	in
+
+	let arg_id name =
+		let rec arg_id i args name =
+			match args with
+			| _ when i >= nvargs -> 4
+			| arg :: _ when arg = name -> i
+			| _ :: args -> arg_id (i+1) args name
+			| _ -> 4
+		in arg_id 0 fdef.params name
+	in
+
+	let rec move_regs d s i =
+		if i > 0 then
+			move_regs d s (i-1) ++ Move(d (i-1), s (i-1))
+		else
+			Nop
 	in
 
 	(* Génération d'un label pour une chaine de caractères *)
@@ -74,8 +106,12 @@ let tr_fdef strings fdef =
 			if List.mem x Mimp.(fdef.locals) then
 				x, Nop
 			else
-				let r = new_vreg() in
-				r, Nop ++ (Get (r, x))
+				let arg_id = arg_id x in
+				if arg_id < nvargs then
+					varg arg_id, Nop
+				else
+					let r = new_vreg() in
+					r, Nop ++ (Get (r, x))
 		| Mimp.Unop(Deref(n, s), e) ->
 			let r1, s1 = tr_expr e in
 			let r = new_vreg() in
@@ -93,11 +129,11 @@ let tr_fdef strings fdef =
 			(* Il faut réaliser ici la convention d'appel : passer les arguments
 			   de la bonne manière, et renvoyer le résultat dans $v0. *)
 			let res = new_vreg() in
-			res, (tr_args args) ++ (Call (f, List.length args)) ++ (Move(res, "$v0"))
+			res, (tr_args args) ++ (Call (f, args_length args)) ++ (Move(res, "$v0"))
 		| Mimp.PCall(e, args) ->
 			let res = new_vreg() in
 			let rptr, sptr = tr_expr e in
-			res, sptr @@ (tr_args args) ++ (PCall (rptr, List.length args)) ++ (Move(res, "$v0"))
+			res, sptr @@ (tr_args args) ++ (PCall (rptr, args_length args)) ++ (Move(res, "$v0"))
 		| Mimp.SysCall(code, args) ->
 			let r, s = tr_expr code in
 			let res = new_vreg () in
@@ -115,11 +151,17 @@ let tr_fdef strings fdef =
 			(tr_syscall_args (i+1) args) @@ s ++ (Move(Printf.sprintf "$a%i" i, r))
 		in tr_syscall_args 0 args
 
-	and tr_args = function
+	and tr_args args =
+		let rec tr_args i = function
 		| [] -> Nop
 		| a :: args -> 
 			let r, s = tr_expr a in
-			tr_args args @@ s ++ (Push r)
+			tr_args (i+1) args @@ s ++
+				if i < 4 then
+					(Move(arg i, r))
+				else
+					(Push r)
+		in tr_args 0 args
 	in 
 
 	let rec tr_instr = function
@@ -127,8 +169,12 @@ let tr_fdef strings fdef =
 			let r, s = tr_expr e in
 			if List.mem x Mimp.(fdef.locals) then
 				s ++ (Move (x, r))
-			else	
-				s ++ (Set (x, r))
+			else
+				let arg_id = arg_id x in
+				if arg_id < nvargs then
+					s ++ (Move (varg arg_id, r))
+				else
+					s ++ (Set (x, r))
 		| Mimp.Write(e1, n, s, e2) ->
 			let r1, s1 = tr_expr e1 in
 			let r2, s2 = tr_expr e2 in
@@ -147,10 +193,10 @@ let tr_fdef strings fdef =
 			let r, s = tr_expr e in
 			s
 		| Mimp.TailCall(f, args) ->
-			(tr_args args) ++ (TailCall (f, List.length args))
+			(tr_args args) ++ (TailCall (f, args_length args))
 		| Mimp.TailPCall(e, args) ->
 			let rptr, sptr = tr_expr e in
-			sptr @@ (tr_args args) ++ (TailPCall (rptr, List.length args))
+			sptr @@ (tr_args args) ++ (TailPCall (rptr, args_length args))
 
 	and tr_seq = function
 		| []	  -> Nop
@@ -160,11 +206,11 @@ let tr_fdef strings fdef =
 	let code =
 		(* À ce code, il faut ajouter la sauvegarde et la restauration
 			des registres virtuels callee_saved. *)
-		tr_seq Mimp.(fdef.code) 
+		move_regs varg arg nvargs @@ tr_seq Mimp.(fdef.code) 
 	in
 {
 	name = Mimp.(fdef.name);
-	params = Mimp.(fdef.params);
+	params = stacked_params;
 	locals = !vregs;
 	code = code
 }

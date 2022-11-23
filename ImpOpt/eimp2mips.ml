@@ -53,7 +53,7 @@ let tr_fdef prog fdef =
     let expected_params = (find_function fname).params in
     if expected_params <> params then
       failwith (Printf.sprintf 
-        "la fonction %s attend exactement %d parametre(s)" fname expected_params);
+        "la fonction %s attend exactement %d parametre(s) sur la pile" fname expected_params);
   in
 
   (* Proposition : utiliser un point de retour unique pour tous les return
@@ -189,9 +189,9 @@ let tr_prog prog =
        dans le cas où tous passent par la pile.
      *)
     @@ comment "on push le resultat de atoi"
-    @@ sw v0 0 sp
-    @@ subi sp sp 4
-    (* Choix : ici, on a sélectionné la version passant par la pile. *)
+    (* @@ sw v0 0 sp
+    @@ subi sp sp 4 *)
+    @@ move a0 v0 
     @@ comment "on va a la fonction main"
     @@ jal "main"
     (* Après l'exécution de la fonction "main", appel système de fin de

@@ -1,0 +1,14 @@
+function print_chars(a, b, c, d, e, f, g, h) {
+    putchar(a);
+    putchar(b);
+    putchar(c);
+    putchar(d);
+    putchar(e);
+    putchar(f);
+    putchar(g);
+    putchar(h);
+}
+
+function main() {
+    print_chars('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h');
+}

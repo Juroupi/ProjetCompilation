@@ -84,10 +84,7 @@ let liveness fdef =
     "$v0"; "$v1"
   ] in
 
-  (* let call_read n = VSet.of_list (List.init n (fun i -> Printf.sprintf "$a%d" i)) in *)
-  let call_read n =
-    VSet.of_list []
-  in
+  let call_read n = VSet.of_list (List.init n (fun i -> Printf.sprintf "$a%d" i)) in
 
   let return_read = 
     VSet.of_list ["$v0"; "$s0"; "$s1"; "$s2"; "$s3"; "$s4"; "$s5"; "$s6"; "$s7"]
